@@ -97,4 +97,4 @@ def create_graph(
 
 if __name__ == "__main__":
     graph = create_graph()
-
+    print(graph.nodes)
