@@ -94,7 +94,3 @@ def create_graph(
             departure_time = row.departure_time
 
     return graph
-
-if __name__ == "__main__":
-    graph = create_graph()
-    print(graph.nodes)

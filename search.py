@@ -1,4 +1,7 @@
 from datetime import datetime
+from load_data import create_graph
+
+graph = create_graph()
 
 MIN_DATE = datetime(2026, 3, 3, 0, 0)
 MAX_DATE = datetime(2026, 12, 12, 23, 59)
@@ -20,9 +23,12 @@ def get_station(is_destination):
         msg = 'What is your starting station? '
 
     while True:
-        answer = input(msg)
-        # serach for station
-        return answer
+        answer = input(msg).strip().lower()
+        found_station = next((station for station in graph.nodes.values() if station.name.lower() == answer), None)
+        if found_station is not None:
+            return found_station
+        print("Unknown station. Please try again...")
+
     
 def get_optimalization_parameter_time():
     msg = 'What do you want to optimize the route based on time (t) or the number of transfers (p)? (t/p) '
@@ -53,16 +59,17 @@ def get_travel_start_time():
 
 
 def get_data_for_new_route():
-    starting_station = get_station(False)
-    destination = get_station(True)
-    time_opt_param = get_optimalization_parameter_time()
-    travel_start_time = get_travel_start_time()
-
-    print(f'Searching for: {starting_station} -> {destination}; {'t' if time_opt_param else 'p'}; {travel_start_time.strftime('%Y-%m-%d %H:%M')}')
+    return {
+        'starting_station': get_station(False),
+        'destination': get_station(True),
+        'time_opt_param': get_optimalization_parameter_time(),
+        'travel_start_time': get_travel_start_time()
+    }
 
 if __name__ == '__main__':
     if get_new_route(): 
         print('Input your route info:')
-        get_data_for_new_route()
+        route_input_data = get_data_for_new_route()
+        print(f'Searching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}')
     else:
         print('bye')
