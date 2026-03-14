@@ -72,4 +72,4 @@ if __name__ == '__main__':
         route_input_data = get_data_for_new_route()
         print(f'Searching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}')
     else:
-        print('bye')
+        print('Bye')

@@ -1,11 +1,10 @@
 class Node:
     def __init__(self, name, latitude, longitude):
         self.name = name
-        self.latitude = latitude
-        self.longitude = longitude
+        self.coordinates = (latitude, longitude)
 
     def __str__(self):
-        return f"{self.name} ({self.latitude}, {self.longitude})"
+        return f"{self.name} ({self.coordinates})"
 
 class Edge:
     def __init__(self,departure_time, arrival_time, route_name, start_date, end_date, weekdays, exceptions):

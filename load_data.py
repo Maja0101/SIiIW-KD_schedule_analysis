@@ -22,7 +22,7 @@ def create_graph(
         else:
             stop_id = row.Index
 
-        graph.add_node(stop_id, Node(row.stop_name, row.stop_lat, row.stop_lon)) 
+        graph.add_node(stop_id, Node(row.stop_name, (row.stop_lat, row.stop_lon))) 
 
     # reading data from stop_times_file
     stop_times = pd.read_csv(stop_times)
@@ -45,7 +45,7 @@ def create_graph(
 
     # reading data from calendar_dates_file
     calendar_dates = pd.read_csv(calendar_dates_file)
-    calendar_dates['date'] = pd.to_datetime(calendar_dates['date'], format="%Y%m%d")
+    calendar_dates['date'] = pd.to_datetime(calendar_dates['date'], format="%Y%m%d").dt.date
 
     # data nessesary for one travel section
     previus_stop_id = None
