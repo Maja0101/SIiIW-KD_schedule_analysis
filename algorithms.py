@@ -67,24 +67,20 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
 
 
     cost = {key: {'time': timedelta.max, 'transfers': maxsize} for key in graph.nodes.keys()}
-    previous_stop = {key: -1 for key in graph.nodes.keys()}
-    # time_at_stop = {key: None for key in graph.nodes.keys()}
-    # arrival_at_stop = {key: None for key in graph.nodes.keys()} 
-    previous_route_part = {key: {'route': None, 'departure_time': None, 'arrival_time': None}  for key in graph.nodes.keys()} 
+    # previous_stop = {key: -1 for key in graph.nodes.keys()}
+
+    previous_route_part = {key: {'stop': -1, 'route': None, 'departure_time': None, 'arrival_time': None}  for key in graph.nodes.keys()} 
 
     cost[starting_point]['time'] = timedelta(0)
     cost[starting_point]['transfers'] = 0
 
-    # time_at_stop[starting_point] = starting_datetime
     previous_route_part[starting_point]['arrival_time'] = starting_datetime
 
     pq.push(starting_point, timedelta(0))
 
     print("start")
     print("cost: ", cost)
-    print("previous_stop: ", previous_stop)
-    # print("time_at_stop: ", time_at_stop)
-    # print("arrival_at_stop: ", arrival_at_stop)
+    # print("previous_stop: ", previous_stop)
     print("previous_route_part: ", previous_route_part)
 
     i = 0
@@ -100,11 +96,6 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
         for v, e in graph.adj[u]:
             print("j = ", j)
             print("u: ", u, " v: ", v, " e: ", f"{e.departure_time}-{e.arrival_time} ({e.route_name})")
-
-            # cost_u_v, transfer = cost_by_time(
-            #     time_at_stop[u], 
-            #     arrival_at_stop[u].route_name if arrival_at_stop[u] is not None else None, 
-            #     e)
             
             cost_u_v, transfer = cost_by_time(
                 previous_route_part[u]['arrival_time'], 
@@ -113,35 +104,29 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
             
             print("cost: ", cost_u_v)
 
-            # if cost_u_v < timedelta.max and (cost[v]['time'] > cost[u]['time'] + cost_u_v or (cost[v]['time'] == cost[u]['time'] + cost_u_v) and e.arrival_time < arrival_at_stop[v].arrival_time):
             if cost_u_v < timedelta.max and (cost[v]['time'] > cost[u]['time'] + cost_u_v or (cost[v]['time'] == cost[u]['time'] + cost_u_v) and previous_route_part[u]['arrival_time'] + cost_u_v < previous_route_part[v]['arrival_time']):
                 cost[v]['time'] = cost[u]['time'] + cost_u_v
                 cost[v]['transfers'] = cost[u]['transfers'] + transfer
-                previous_stop[v] = u
+                # previous_stop[v] = u
+                previous_route_part[v]['stop'] = u
 
                 if u == starting_point:
-                    # time_at_stop[v] = datetime(time_at_stop[u].year, time_at_stop[u].month, time_at_stop[u].day) + e.arrival_time
                     previous_route_part[v]['arrival_time'] = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
                 else:
-                    # time_at_stop[v] = time_at_stop[u] + cost_u_v
                     previous_route_part[v]['arrival_time'] = previous_route_part[u]['arrival_time'] + cost_u_v
                 previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
                 previous_route_part[v]['route'] = e.route_name
-                # arrival_at_stop[v] = e
                 pq.push(v, cost[v]['time'])
 
             print("cost: ", cost)
-            print("previous_stop: ", previous_stop)
-            # print("time_at_stop: ", time_at_stop)
-            # print("arrival_at_stop: ", arrival_at_stop)
+            # print("previous_stop: ", previous_stop)
             print("previous_route_part: ", previous_route_part)
 
             j += 1
 
         i += 1
 
-    # return cost, previous_stop, arrival_at_stop, time_at_stop
-    return cost, previous_stop, previous_route_part
+    return cost, previous_route_part
 
 def heuristics(first_stop, second_stop):
     return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
@@ -185,15 +170,10 @@ if __name__ == '__main__':
     graph.add_edge(5, 1, Edge(timedelta(0, hours=10, minutes=15), timedelta(0, hours=10, minutes=21), 'a', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
     graph.add_edge(5, 3, Edge(timedelta(0, hours=10, minutes=30), timedelta(0, hours=10, minutes=35), 'c', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
 
-    # cost, previous_stop, arrival_at_stop, time_at_stop = dijkstra_algorithm(graph, 0, datetime(2026, 3, 14, 10, 10, 00))
-    cost, previous_stop, previous_route_part = dijkstra_algorithm(graph, 0, datetime(2026, 3, 14, 10, 10, 00))
+    cost, previous_route_part = dijkstra_algorithm(graph, 0, datetime(2026, 3, 14, 10, 10, 00))
 
     print("end")
     print("cost: ", cost)
-    print("previous_stop: ", previous_stop)
-    # print("time_at_stop: ", time_at_stop)
-    # print("arrival_at_stop: ")
-    # for key, edge in arrival_at_stop.items():
-    #     print(key, str(edge))
+    # print("previous_stop: ", previous_stop)
     print("previous_route_part: ", previous_route_part)
 
