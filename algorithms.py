@@ -30,44 +30,42 @@ def runs_on_this_day(date, edge):
     return edge.weekdays[date.weekday()]
 
 def cost_by_time(current_datetime, current_route, edge):
-    print("cost by time")
+    # print("cost by time")
     if current_datetime > edge.start_date and current_datetime < edge.end_date:
-        print("between dates")
+        # print("between dates")
         if runs_on_this_day(current_datetime.date(), edge):
             # print("runs on this day")
             curr_td = timedelta(hours=current_datetime.hour, minutes=current_datetime.minute, seconds=current_datetime.second)
-            print("curr td ", curr_td)
-            print("departure time ", edge.departure_time)
-            print("valid ", curr_td <= edge.departure_time)
+            # print("curr td ", curr_td)
+            # print("departure time ", edge.departure_time)
+            # print("valid ", curr_td <= edge.departure_time)
 
             if current_route is None and curr_td <= edge.departure_time:
-                print("first")
-                print("ok")
-                print("cost: ", edge.arrival_time - edge.departure_time)
+                # print("first")
+                # print("ok")
+                # print("cost: ", edge.arrival_time - edge.departure_time)
                 return edge.arrival_time - edge.departure_time, 0
 
             if edge.route_name == current_route and curr_td <= edge.departure_time:
-                print("without transfer")
-                print("ok")
-                print("cost: ", edge.arrival_time - curr_td)
+                # print("without transfer")
+                # print("ok")
+                # print("cost: ", edge.arrival_time - curr_td)
                 return edge.arrival_time - curr_td, 0
             
             if curr_td + TRANSFER_TIME <= edge.departure_time:
-                print("with transfer")
-                print("ok")
-                print("cost: ", edge.arrival_time - curr_td)
+                # print("with transfer")
+                # print("ok")
+                # print("cost: ", edge.arrival_time - curr_td)
                 return edge.arrival_time - curr_td, 1
         
-    print("not ok")   
+    # print("not ok")   
     return timedelta.max, maxsize
     
 
 def dijkstra_algorithm(graph, starting_point, starting_datetime):
     pq = PriorityQueue()
 
-
     cost = {key: {'time': timedelta.max, 'transfers': maxsize} for key in graph.nodes.keys()}
-    # previous_stop = {key: -1 for key in graph.nodes.keys()}
 
     previous_route_part = {key: {'stop': -1, 'route': None, 'departure_time': None, 'arrival_time': None}  for key in graph.nodes.keys()} 
 
@@ -80,7 +78,6 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
 
     print("start")
     print("cost: ", cost)
-    # print("previous_stop: ", previous_stop)
     print("previous_route_part: ", previous_route_part)
 
     i = 0
@@ -107,7 +104,6 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
             if cost_u_v < timedelta.max and (cost[v]['time'] > cost[u]['time'] + cost_u_v or (cost[v]['time'] == cost[u]['time'] + cost_u_v) and previous_route_part[u]['arrival_time'] + cost_u_v < previous_route_part[v]['arrival_time']):
                 cost[v]['time'] = cost[u]['time'] + cost_u_v
                 cost[v]['transfers'] = cost[u]['transfers'] + transfer
-                # previous_stop[v] = u
                 previous_route_part[v]['stop'] = u
 
                 if u == starting_point:
@@ -119,7 +115,6 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
                 pq.push(v, cost[v]['time'])
 
             print("cost: ", cost)
-            # print("previous_stop: ", previous_stop)
             print("previous_route_part: ", previous_route_part)
 
             j += 1
@@ -174,6 +169,5 @@ if __name__ == '__main__':
 
     print("end")
     print("cost: ", cost)
-    # print("previous_stop: ", previous_stop)
     print("previous_route_part: ", previous_route_part)
 
