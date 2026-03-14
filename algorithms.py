@@ -126,23 +126,40 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
 def heuristics(first_stop, second_stop):
     return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
 
-def display_users_route(graph, starting_point, ending_point, algorithm_results):
-    time_cost, transfer_cost, previous_stop, time_at_stop, route_at_stop = algorithm_results
+def user_route(starting_point, ending_point, algorithm_results):
+    cost, route_part = algorithm_results
 
-    route_parts = []
+    route = []
 
     current_stop = ending_point
 
-    route_part = {"route_name": route_at_stop[current_stop], "stops": [current_stop], "start_time": time_at_stop[current_stop], "end_time":  time_at_stop[current_stop]}
+
+    single_train_route = {"route_name": route_part[current_stop]['route'], "stops": [], "start_time": route_part[current_stop]['arrival_time'], "end_time":  route_part[current_stop]['arrival_time']}
     while current_stop != starting_point:
-        while route_part["route_name"] == route_at_stop[current_stop]:
-            current_stop = previous_stop[current_stop]
-            route_part["stops"].append(current_stop)
-            route_part["start_time"] = time_at_stop[current_stop]
-    
+        if single_train_route["route_name"] == route_part[current_stop]['route']:
+            single_train_route["stops"].append(current_stop)
+            single_train_route["start_time"] = route_part[current_stop]['departure_time']
+            print("s t r ", single_train_route)
+        else:
+           single_train_route['stops'].append(current_stop)
+           single_train_route['stops'].reverse()
+           print("final single route ", single_train_route)
+           route.append(single_train_route)
+           single_train_route = {"route_name": route_part[current_stop]['route'], "stops": [current_stop], "start_time": route_part[current_stop]['arrival_time'], "end_time":  route_part[current_stop]['arrival_time']} 
 
+        current_stop = route_part[current_stop]['stop']
     
+    single_train_route["stops"].append(current_stop)
+    single_train_route['stops'].reverse()
+    print("final single route ", single_train_route)
+    route.append(single_train_route) 
+    route.reverse()
 
+    print("route: ")
+    for r in route:
+        print(r)
+
+    return cost[ending_point], route
 
 
 if __name__ == '__main__':
@@ -170,4 +187,6 @@ if __name__ == '__main__':
     print("end")
     print("cost: ", cost)
     print("previous_route_part: ", previous_route_part)
+
+    user_route  = user_route(0, 5, (cost, previous_route_part))
 
