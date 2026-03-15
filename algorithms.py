@@ -123,10 +123,11 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
     return cost, previous_route_part
 
 def heuristics(first_stop, second_stop):
-    print("heuristics ", timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) )
+    # print("heuristics ", timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) )
     return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
 
-def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True):
+def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True, starting_route=None):
+    print("\n\nA*")
     open_v = PriorityQueue()
     closed_v = set()
 
@@ -138,29 +139,32 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
     cost[starting_point]['transfers'] = 0
 
     previous_route_part[starting_point]['arrival_time'] = starting_datetime
+    previous_route_part[starting_point]['route'] = starting_route
 
     open_v.push(starting_point, timedelta(0))
 
     i = 0
     while not open_v.is_empty():
-        print("i = ", i)
+        # print("i = ", i)
 
         d, u = open_v.pop()
 
-        print("got with f ", d)
+        # print("got with f ", d)
 
         if u == ending_point:
+            print("cost: ", cost)
+            print("previous_route_part: ", previous_route_part)
             return cost, previous_route_part
 
         closed_v.add(u)
 
         j = 0
         for v, e in graph.adj[u]:
-            print("j = ", j)
-            print("u: ", u, " v: ", v, " e: ", f"{e.departure_time}-{e.arrival_time} ({e.route_name})")
+            # print("j = ", j)
+            # print("u: ", u, " v: ", v, " e: ", f"{e.departure_time}-{e.arrival_time} ({e.route_name})")
 
-            print("cost: ", cost)
-            print("previous_route_part: ", previous_route_part)
+            # print("cost: ", cost)
+            # print("previous_route_part: ", previous_route_part)
 
             if v in closed_v:
                 continue
@@ -170,8 +174,8 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                 previous_route_part[u]['route'], 
                 e)
             
-            print("time cost: ", time_u_v)
-            print("transfer cost: ", transfer_u_v)
+            # print("time cost: ", time_u_v)
+            # print("transfer cost: ", transfer_u_v)
 
             if (optimize_by_time and (
                 time_u_v < timedelta.max and (
@@ -199,14 +203,148 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                     f += cost[v]['transfers'] * TRANSFER_PENALTY
                 open_v.push(v, f)
 
-                print("adding with f ", f)
+                # print("adding with f ", f)
 
             j += 1
 
         i += 1
 
+    print("cost: ", cost)
+    print("previous_route_part: ", previous_route_part)
     return cost, previous_route_part
 
+def tsp_route_cost(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
+    print("\n\ntsp_route_cost")
+    curr_stop = starting_point
+    curr_datetime = starting_datetime
+    curr_route = None
+    total_cost = {'time': timedelta(0), 'transfers': 0}
+
+    for stop in stops_to_visit:
+        print("total cost besgin: ", total_cost)
+        cost, previous_route_part = a_star_algorithm(graph, curr_stop, stop, curr_datetime, optimize_by_time, curr_route)
+
+        if previous_route_part[stop]['stop'] == -1:
+            print("max 1")
+            return {'time': timedelta.max, 'transfers': maxsize}
+        
+        total_cost['time'] += cost[stop]['time']
+        total_cost['transfers'] += cost[stop]['transfers']
+        print("total cost after iter: ", total_cost)
+
+        curr_datetime = previous_route_part[stop]['arrival_time']
+        curr_stop = stop
+        curr_route = previous_route_part[stop]['route']
+
+    cost, previous_route_part = a_star_algorithm(graph, curr_stop, starting_point, curr_datetime, optimize_by_time, curr_route)
+
+    if previous_route_part[starting_point]['stop'] == -1:
+        print("max 2")
+        return {'time': timedelta.max, 'transfers': maxsize}
+    
+    total_cost['time'] += cost[starting_point]['time']
+    total_cost['transfers'] += cost[starting_point]['transfers']
+
+    print("total cost at last: ", total_cost)
+    return total_cost
+
+def generate_neighbours(stops_to_visit):
+    print("\n\ngenerate_neighbours")
+    neighbours = []
+
+    n = len(stops_to_visit)
+
+    for i in range(n - 1):
+        for j in range(i + 1, n):
+            new_stops_to_visit = stops_to_visit.copy()
+            new_stops_to_visit[i:j+1] = reversed(new_stops_to_visit[i:j+1])
+            neighbours.append((new_stops_to_visit, (i, j)))
+
+    print("neighbours: ", neighbours)
+    return neighbours
+
+def initial_solution(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
+    print("\n\ninitial_solution")
+    remaining_stops = set(stops_to_visit)
+    initial_solution = []
+
+    curr_stop = starting_point
+    curr_datetime = starting_datetime
+    curr_route = None
+
+    while remaining_stops:
+        best_stop = None
+        best_cost = {'time': timedelta.max, 'transfers': maxsize}
+        best_arrival = curr_datetime
+
+        for stop in remaining_stops:
+            cost, previous_route_part = a_star_algorithm(graph, curr_stop, stop, curr_datetime, optimize_by_time, curr_route)
+
+            if previous_route_part[stop]['stop'] != -1 and ((optimize_by_time and cost[stop]['time'] < best_cost['time']) or (not optimize_by_time and cost[stop]['transfers'] < best_cost['transfers'])):
+                best_stop = stop
+                best_cost['time'] = cost[stop]['time']
+                best_cost['transfers'] = cost[stop]['transfers']
+                best_arrival = previous_route_part[stop]['arrival_time']
+
+        initial_solution.append(best_stop)
+        remaining_stops.remove(best_stop)
+
+        curr_stop = best_stop
+        curr_datetime = best_arrival
+
+    print("initial solution: ", initial_solution)
+    return initial_solution
+
+def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, optimize_by_time=True, max_iter=500):
+    print("\n\ntabu_search_tsp")
+    n = len(stops_to_visit)
+
+    T = max(5, n // 2)
+
+    curr_solution = initial_solution(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time)
+
+    best_solution = curr_solution.copy()
+
+    best_cost = tsp_route_cost(graph, best_solution, starting_point, starting_datetime)
+
+    tabu = {}
+
+    iteration = 0
+
+    while iteration < max_iter:
+        iteration += 1
+
+        neighbours = generate_neighbours(curr_solution)
+
+        best_candidate = None
+        best_candidate_cost = {'time': timedelta.max, 'transfers': maxsize}
+        best_move = None
+
+        for candidate, move in neighbours:
+            if move in tabu and tabu[move] > iteration:
+                continue
+
+            cost = tsp_route_cost(graph, candidate, starting_point, starting_datetime)
+
+            if (optimize_by_time and cost['time'] < best_candidate_cost['time']) or (not optimize_by_time and cost['transfers'] < best_cost['transfers']):
+                best_candidate = candidate
+                best_candidate_cost = cost
+                best_move = move
+
+        if best_candidate is None:
+            break
+
+        curr_solution = best_candidate
+
+        tabu[best_move] = iteration + T # ? do zmiany
+
+        if (optimize_by_time and best_candidate_cost['time'] < best_cost['time']) or (not optimize_by_time and best_candidate_cost['transfers'] < best_cost['transfers']):
+            best_solution = best_candidate
+            best_cost = best_candidate_cost
+
+    print("best solution: ", best_solution)
+    print("best cost: ", best_cost)
+    return best_solution, best_cost
 
 def user_route(starting_point, ending_point, algorithm_results):
     cost, route_part = algorithm_results
@@ -280,20 +418,27 @@ if __name__ == '__main__':
     graph.add_edge(1, 2, Edge(timedelta(0, hours=10, minutes=18), timedelta(0, hours=10, minutes=20), 'e', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
     graph.add_edge(2, 3, Edge(timedelta(0, hours=10, minutes=10), timedelta(0, hours=10, minutes=11), 'd', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
     graph.add_edge(2, 5, Edge(timedelta(0, hours=10, minutes=26), timedelta(0, hours=10, minutes=36), 'f', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
-    graph.add_edge(3, 1, Edge(timedelta(0, hours=10, minutes=35), timedelta(0, hours=10, minutes=36), 'c', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
+    graph.add_edge(3, 1, Edge(timedelta(0, hours=10, minutes=55), timedelta(0, hours=11, minutes=00), 'c', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
     graph.add_edge(4, 5, Edge(timedelta(0, hours=10, minutes=32), timedelta(0, hours=10, minutes=36), 'b', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
-    graph.add_edge(5, 0, Edge(timedelta(0, hours=10, minutes=15), timedelta(0, hours=10, minutes=21), 'a', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
+    graph.add_edge(5, 0, Edge(timedelta(0, hours=10, minutes=45), timedelta(0, hours=10, minutes=50), 'a', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
     graph.add_edge(5, 3, Edge(timedelta(0, hours=10, minutes=41), timedelta(0, hours=10, minutes=45), 'c', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
     graph.add_edge(3, 6, Edge(timedelta(0, hours=10, minutes=46), timedelta(0, hours=10, minutes=50), 'd', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
     graph.add_edge(5, 3, Edge(timedelta(0, hours=10, minutes=36), timedelta(0, hours=10, minutes=55), 'b', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
+    graph.add_edge(1, 0, Edge(timedelta(0, hours=11, minutes=10), timedelta(0, hours=11, minutes=20), 'g', datetime(2026, 3, 3), datetime(2026, 12, 12), [True, True, True, True, True, True, True], {}))
 
     # cost, previous_route_part = dijkstra_algorithm(graph, 0, datetime(2026, 3, 14, 10, 10, 00))
-    cost, previous_route_part = a_star_algorithm(graph, 0, 3, datetime(2026, 3, 14, 10, 10, 00), False)
+    # cost, previous_route_part = a_star_algorithm(graph, 0, 5, datetime(2026, 3, 14, 10, 0, 00), True, None)
+
+    # print("end")
+    # print("cost: ", cost)
+    # print("previous_route_part: ", previous_route_part)
+
+    # user_route  = user_route(0, 5, (cost, previous_route_part))
+
+    # display_user_route(graph, user_route)
+
+    solution, cost = tabu_search_tsp(graph, 0, [5, 1], datetime(2026, 3, 14, 10, 0, 00))
 
     print("end")
-    print("cost: ", cost)
-    print("previous_route_part: ", previous_route_part)
-
-    user_route  = user_route(0, 3, (cost, previous_route_part))
-
-    display_user_route(graph, user_route)
+    print(solution)
+    print(cost)
