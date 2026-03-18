@@ -132,11 +132,9 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
     return cost, previous_route_part
 
 def heuristics(first_stop, second_stop):
-    # print("heuristics ", timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) )
     return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
 
 def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True, starting_route=None):
-    print("A*")
     open_v = PriorityQueue()
     closed_v = set()
 
@@ -152,29 +150,16 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
 
     open_v.push(starting_point, timedelta(0))
 
-    i = 0
     while not open_v.is_empty():
-        # print("i = ", i)
 
         d, u = open_v.pop()
 
-        # print("got with f ", d)
-
         if u == ending_point:
-            # print("cost: ", cost)
-            # print("previous_route_part: ", previous_route_part)
             return cost, previous_route_part
 
         closed_v.add(u)
 
-        j = 0
         for v, e in graph.adj[u]:
-            # print("j = ", j)
-            # print("u: ", u, " v: ", v, " e: ", f"{e.departure_time}-{e.arrival_time} ({e.route_name})")
-
-            # print("cost: ", cost)
-            # print("previous_route_part: ", previous_route_part)
-
             if v in closed_v:
                 continue
 
@@ -182,9 +167,6 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                 previous_route_part[u]['arrival_time'], 
                 previous_route_part[u]['route'], 
                 e)
-            
-            # print("time cost: ", time_u_v)
-            # print("transfer cost: ", transfer_u_v)
 
             is_not_infinite_cost = (optimize_by_time and time_u_v < timedelta.max) or (not optimize_by_time and transfer_u_v < maxsize)
 
@@ -198,16 +180,6 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                 is_better_cost = (optimize_by_time and cost[v]['time'] > cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v)
                 is_equal_cost = (optimize_by_time and cost[v]['time'] == cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v)
                 is_equal_and_earlier_than_best_known_part = is_equal_cost and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
-
-            # if (optimize_by_time and (
-            #     time_u_v < timedelta.max and (
-            #         cost[v]['time'] > cost[u]['time'] + time_u_v or (
-            #             cost[v]['time'] == cost[u]['time'] + time_u_v and previous_route_part[u]['arrival_time'] + time_u_v < previous_route_part[v]['arrival_time'])))) or (
-            #     not optimize_by_time and (
-            #         transfer_u_v < maxsize and (
-            #             cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v or (
-            #                 cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v and previous_route_part[u]['arrival_time'] + time_u_v < previous_route_part[v]['arrival_time'])))
-            #     ):
 
                 if (is_better_cost or is_equal_and_earlier_than_best_known_part):
                     
@@ -227,14 +199,6 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                         f += cost[v]['transfers'] * TRANSFER_PENALTY
                     open_v.push(v, f)
 
-                # print("adding with f ", f)
-
-            j += 1
-
-        i += 1
-
-    # print("cost: ", cost)
-    # print("previous_route_part: ", previous_route_part)
     return cost, previous_route_part
 
 def tsp_route_cost(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
