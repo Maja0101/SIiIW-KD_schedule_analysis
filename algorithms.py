@@ -39,9 +39,7 @@ def runs_on_this_day(date, edge):
     # print("end runs on this day")
     return edge.weekdays[date.weekday()]
 
-def calc_cost(current_datetime, current_route, edge, er):
-    if er:
-        print("calc cost: ", current_datetime, current_route, edge)
+def calc_cost(current_datetime, current_route, edge):
     # print(f"{current_datetime}: {edge.start_date} - {edge.end_date}")
     if current_datetime > edge.start_date and current_datetime < edge.end_date:
         # print("between dates")
@@ -96,42 +94,17 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
 
     pq.push(starting_point, timedelta(0))
 
-    i = 0
     while not pq.is_empty():
-        # print("i = ", i)
 
         d, u = pq.pop()
 
-        j = 0
         if graph.adj.get(u) is not None:
             for v, e in graph.adj[u]:
-                # if v == 1413386: print("j = ", j)
-                # if v == 1413386 and e.departure_time > timedelta(hours=13, minutes=25) and e.departure_time < timedelta(hours=14, minutes=0):  print("u: ", u, " v: ", v, " e: ", f"{e.departure_time}-{e.arrival_time} ({e.route_name})")
-
-                if v == 1413355 and u == 1413288:
-                    expectedRoute = True
-                else:
-                    expectedRoute = False
-
+                
                 time_u_v, transfer_u_v = calc_cost(
                     previous_route_part[u]['arrival_time'], 
                     previous_route_part[u]['route'], 
-                    e, expectedRoute)
-                
-
-                if expectedRoute:
-                    print()
-                    print("u: ", u, " v: ", v, " e: ", f"{e.departure_time}-{e.arrival_time} ({e.route_name})")
-                    print(time_u_v, transfer_u_v)
-                
-                # if v == 1413386: print("time cost: ", time_u_v)
-                # if v == 1413386: print("transfer cost: ", time_u_v)
-
-                # if v == 1413355:
-                #     print(time_u_v < timedelta.max)
-                # print()
-
-                
+                    e)
 
                 if time_u_v < timedelta.max:
 
@@ -143,23 +116,11 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
                     is_earlier_than_best_known_part = (cost[v]['time'] == cost[u]['time'] + time_u_v) and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
 
                     if (cost[v]['time'] > cost[u]['time'] + time_u_v or is_earlier_than_best_known_part):
-                    
-                        if expectedRoute:
-                            
-                            print("----cond: ", cost[v]['time'], cost[u]['time'] + time_u_v, cost[v]['time'] > cost[u]['time'] + time_u_v)
-                            if cost[v]['time'] == cost[u]['time'] + time_u_v:
-                                print(previous_route_part[v]['arrival_time'], "---", temp_new_arrival_time, temp_new_arrival_time < previous_route_part[v]['arrival_time'])
-                        # if time_u_v <= timedelta(minutes=4): 
-                            # print("inside if")
-                            # print(cost[v]['time'] > cost[u]['time'] + time_u_v)
-                            # print(cost[v]['time'] == cost[u]['time'] + time_u_v)
-                            # print((previous_route_part[u]['arrival_time'] + time_u_v) < previous_route_part[v]['arrival_time'])
                         
                         cost[v]['time'] = cost[u]['time'] + time_u_v
                         cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
                         previous_route_part[v]['stop'] = u
 
-                        # print("cost ", cost[v])
 
                         previous_route_part[v]['arrival_time'] = temp_new_arrival_time
     
@@ -167,14 +128,6 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
                         previous_route_part[v]['route'] = e.route_name
                         pq.push(v, cost[v]['time'])
 
-                # if v == 1413386: print("cost Wr: ", cost[starting_point])
-                # if v == 1413386: print("cost Bl: ", cost[1413386])
-                # if v == 1413386: print("previous_route_part Wr: ", previous_route_part[starting_point])
-                # if v == 1413386: print("previous_route_part Bl: ", previous_route_part[1413386])
-
-                j += 1
-
-        i += 1
 
     return cost, previous_route_part
 
@@ -501,19 +454,19 @@ def user_route(starting_point, ending_point, algorithm_results):
 
 
     single_train_route = {"route_name": route_part[current_stop]['route'], "stops": [], "start_time": route_part[current_stop]['arrival_time'], "end_time":  route_part[current_stop]['arrival_time']}
-    print("first s t r ", single_train_route)
+    # print("first s t r ", single_train_route)
     while current_stop != starting_point:
-        print("while")
-        print("curr stop ", current_stop)
-        print("start stop ", starting_point)
+        # print("while")
+        # print("curr stop ", current_stop)
+        # print("start stop ", starting_point)
         if single_train_route["route_name"] == route_part[current_stop]['route']:
             single_train_route["stops"].append(current_stop)
             single_train_route["start_time"] = route_part[current_stop]['departure_time']
-            print("s t r ", single_train_route)
+            # print("s t r ", single_train_route)
         else:
            single_train_route['stops'].append(current_stop)
            single_train_route['stops'].reverse()
-           print("final single route ", single_train_route)
+        #    print("final single route ", single_train_route)
            route.append(single_train_route)
            single_train_route = {"route_name": route_part[current_stop]['route'], "stops": [current_stop], "start_time": route_part[current_stop]['arrival_time'], "end_time":  route_part[current_stop]['arrival_time']} 
 
@@ -521,13 +474,13 @@ def user_route(starting_point, ending_point, algorithm_results):
     
     single_train_route["stops"].append(current_stop)
     single_train_route['stops'].reverse()
-    print("final single route ", single_train_route)
+    # print("final single route ", single_train_route)
     route.append(single_train_route) 
     route.reverse()
 
-    print("route: ")
-    for r in route:
-        print(r)
+    # print("route: ")
+    # for r in route:
+    #     print(r)
 
     return cost[ending_point], route
 
