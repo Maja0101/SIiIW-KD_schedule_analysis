@@ -74,7 +74,8 @@ if __name__ == '__main__':
         # print(f'Searching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}')
         # cost, previous_route_part = dijkstra_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'])
         # cost, previous_route_part = dijkstra_algorithm(graph, 1413209, datetime(2026, 3, 21, 13, 25)) # ladek
-        cost, previous_route_part = dijkstra_algorithm(graph, 1413209, datetime(2026, 3, 6, 13, 25))
+        # cost, previous_route_part = dijkstra_algorithm(graph, 1413209, datetime(2026, 3, 6, 13, 25))
+        cost, previous_route_part = a_star_algorithm(graph, 1413209, 1413356, datetime(2026, 3, 6, 13, 25))
         # print(cost[1413380])
         # print(cost[1413386])
         # print(previous_route_part[1413380])

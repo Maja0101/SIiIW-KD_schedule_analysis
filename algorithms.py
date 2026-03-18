@@ -113,9 +113,9 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
                     else:
                         temp_new_arrival_time = previous_route_part[u]['arrival_time'] + time_u_v
 
-                    is_earlier_than_best_known_part = (cost[v]['time'] == cost[u]['time'] + time_u_v) and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
+                    is_equal_and_earlier_than_best_known_part = (cost[v]['time'] == cost[u]['time'] + time_u_v) and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
 
-                    if (cost[v]['time'] > cost[u]['time'] + time_u_v or is_earlier_than_best_known_part):
+                    if (cost[v]['time'] > cost[u]['time'] + time_u_v or is_equal_and_earlier_than_best_known_part):
                         
                         cost[v]['time'] = cost[u]['time'] + time_u_v
                         cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
@@ -186,31 +186,46 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
             # print("time cost: ", time_u_v)
             # print("transfer cost: ", transfer_u_v)
 
-            if (optimize_by_time and (
-                time_u_v < timedelta.max and (
-                    cost[v]['time'] > cost[u]['time'] + time_u_v or (
-                        cost[v]['time'] == cost[u]['time'] + time_u_v and previous_route_part[u]['arrival_time'] + time_u_v < previous_route_part[v]['arrival_time'])))) or (
-                not optimize_by_time and (
-                    transfer_u_v < maxsize and (
-                        cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v or (
-                            cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v and previous_route_part[u]['arrival_time'] + time_u_v < previous_route_part[v]['arrival_time'])))
-                ):
-                    
-                cost[v]['time'] = cost[u]['time'] + time_u_v
-                cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
-                previous_route_part[v]['stop'] = u
+            is_not_infinite_cost = (optimize_by_time and time_u_v < timedelta.max) or (not optimize_by_time and transfer_u_v < maxsize)
+
+            if is_not_infinite_cost:
 
                 if u == starting_point:
-                    previous_route_part[v]['arrival_time'] = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
+                    temp_new_arrival_time = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
                 else:
-                    previous_route_part[v]['arrival_time'] = previous_route_part[u]['arrival_time'] + time_u_v
-                previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
-                previous_route_part[v]['route'] = e.route_name
+                    temp_new_arrival_time = previous_route_part[u]['arrival_time'] + time_u_v
 
-                f = cost[v]['time'] + heuristics(graph.nodes[v], graph.nodes[ending_point])
-                if not optimize_by_time:
-                    f += cost[v]['transfers'] * TRANSFER_PENALTY
-                open_v.push(v, f)
+                is_better_cost = (optimize_by_time and cost[v]['time'] > cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v)
+                is_equal_cost = (optimize_by_time and cost[v]['time'] == cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v)
+                is_equal_and_earlier_than_best_known_part = is_equal_cost and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
+
+            # if (optimize_by_time and (
+            #     time_u_v < timedelta.max and (
+            #         cost[v]['time'] > cost[u]['time'] + time_u_v or (
+            #             cost[v]['time'] == cost[u]['time'] + time_u_v and previous_route_part[u]['arrival_time'] + time_u_v < previous_route_part[v]['arrival_time'])))) or (
+            #     not optimize_by_time and (
+            #         transfer_u_v < maxsize and (
+            #             cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v or (
+            #                 cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v and previous_route_part[u]['arrival_time'] + time_u_v < previous_route_part[v]['arrival_time'])))
+            #     ):
+
+                if (is_better_cost or is_equal_and_earlier_than_best_known_part):
+                    
+                    cost[v]['time'] = cost[u]['time'] + time_u_v
+                    cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
+                    previous_route_part[v]['stop'] = u
+
+                    if u == starting_point:
+                        previous_route_part[v]['arrival_time'] = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
+                    else:
+                        previous_route_part[v]['arrival_time'] = previous_route_part[u]['arrival_time'] + time_u_v
+                    previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
+                    previous_route_part[v]['route'] = e.route_name
+
+                    f = cost[v]['time'] + heuristics(graph.nodes[v], graph.nodes[ending_point])
+                    if not optimize_by_time:
+                        f += cost[v]['transfers'] * TRANSFER_PENALTY
+                    open_v.push(v, f)
 
                 # print("adding with f ", f)
 
