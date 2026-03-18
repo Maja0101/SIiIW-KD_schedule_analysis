@@ -22,7 +22,7 @@ def create_graph(
         else:
             stop_id = row.Index
 
-        graph.add_node(stop_id, Node(row.stop_name, (row.stop_lat, row.stop_lon))) 
+        graph.add_node(stop_id, Node(stop_id, row.stop_name, row.stop_lat, row.stop_lon)) 
 
     # reading data from stop_times_file
     stop_times = pd.read_csv(stop_times)
@@ -74,7 +74,7 @@ def create_graph(
             start_date = operating_time['start_date']
             end_date = operating_time['end_date']
             weekdays_names = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-            weekdays = [True if operating_time[day] == 1 else 0 for day in weekdays_names]
+            weekdays = [True if operating_time[day] == 1 else False for day in weekdays_names]
             
             route_exceptions = calendar_dates.loc[calendar_dates['service_id'] == service_id]
             if not route_exceptions.empty:

@@ -1,5 +1,6 @@
 from datetime import datetime
 from load_data import create_graph
+from algorithms import dijkstra_algorithm, a_star_algorithm, user_route, display_user_route
 
 graph = create_graph()
 
@@ -67,9 +68,20 @@ def get_data_for_new_route():
     }
 
 if __name__ == '__main__':
-    if get_new_route(): 
-        print('Input your route info:')
-        route_input_data = get_data_for_new_route()
-        print(f'Searching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}')
-    else:
-        print('Bye')
+    # if get_new_route(): 
+        # print('Input your route info:')
+        # route_input_data = get_data_for_new_route()
+        # print(f'Searching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}')
+        # cost, previous_route_part = dijkstra_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'])
+        # cost, previous_route_part = dijkstra_algorithm(graph, 1413209, datetime(2026, 3, 21, 13, 25)) # ladek
+        cost, previous_route_part = dijkstra_algorithm(graph, 1413209, datetime(2026, 3, 6, 13, 25))
+        # print(cost[1413380])
+        # print(cost[1413386])
+        # print(previous_route_part[1413380])
+        # print(previous_route_part[1413386])
+        
+        # user_route  = user_route(1413209, 1413355, (cost, previous_route_part)) # ladek -> trzeb ieszowice - nie znajduje
+        user_route  = user_route(1413209, 1413356, (cost, previous_route_part))
+        display_user_route(graph, user_route)
+    # else:
+    #     print('Bye')
