@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, date
 from sys import maxsize
 from geopy.distance import geodesic
 from collections import deque
+from timer import timer
 
 TRANSFER_TIME = timedelta(minutes=5)
 AVG_TRAVEL_TIME = 86.08
@@ -39,47 +40,31 @@ def runs_on_this_day(date, edge):
     # print("end runs on this day")
     return edge.weekdays[date.weekday()]
 
-def calc_cost(current_datetime, current_route, edge):
-    # print(f"{current_datetime}: {edge.start_date} - {edge.end_date}")
+def calc_cost(current_datetime, current_route, edge, ep=False):
+    if ep: print(f"{current_datetime}: {edge.start_date} - {edge.end_date} ({current_route})")
     if current_datetime > edge.start_date and current_datetime < edge.end_date:
         # print("between dates")
-        # print(f"{edge.weekdays} - {edge.exceptions.get(current_datetime.date())}")
-        # print(edge.exceptions.get(date))
-        # print(current_datetime.date)
-        # print(current_datetime.date())
+        if ep: print(f"{edge.weekdays} - {edge.exceptions.get(current_datetime.date())}")
+
         if runs_on_this_day(current_datetime.date(), edge):
-            # if current_datetime < datetime(2026, 3, 21, 14, 00): print("runs on this day")
-            # if current_datetime < datetime(2026, 3, 21, 14, 00): print("curr datetime ", current_datetime)
-            # if current_datetime < datetime(2026, 3, 21, 14, 00): print(edge.weekdays)
-            # if current_datetime < datetime(2026, 3, 21, 14, 00): print(edge.exceptions.get(date))
             curr_td = timedelta(hours=current_datetime.hour, minutes=current_datetime.minute, seconds=current_datetime.second)
-            # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print(current_datetime)
-            # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print("curr td ", curr_td)
-            # if edge.departure_time < timedelta(hours=14) and curr_td <= edge.departure_time: print("departure time ", edge.departure_time)
-            # # if current_datetime < datetime(2026, 3, 21, 14, 00): print("valid ", curr_td <= edge.departure_time)
+            if ep: print(curr_td)
 
             if current_route is None and curr_td <= edge.departure_time:
-                # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print("first")
-                # if current_datetime < datetime(2026, 3, 21, 14, 00): print("ok")
-                # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print("cost: ", edge.arrival_time - edge.departure_time)
+                if ep: print("first")
                 return edge.arrival_time - edge.departure_time, 0
 
             if edge.route_name == current_route and curr_td <= edge.departure_time:
-                # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print("without transfer")
-                # if current_datetime < datetime(2026, 3, 21, 14, 00): print("ok")
-                # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print("cost: ", edge.arrival_time - curr_td)
+                if ep: print("no transfer")
                 return edge.arrival_time - curr_td, 0
             
             if curr_td + TRANSFER_TIME <= edge.departure_time:
-                # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print("with transfer")
-                # if current_datetime < datetime(2026, 3, 21, 14, 00): print("ok")
-                # if edge.departure_time < timedelta(hours=14) and  curr_td <= edge.departure_time: print("cost: ", edge.arrival_time - curr_td)
+                if ep: print("transfer")
                 return edge.arrival_time - curr_td, 1
         
-    # print("not ok")   
     return timedelta.max, maxsize
     
-
+@timer
 def dijkstra_algorithm(graph, starting_point, starting_datetime):
     pq = PriorityQueue()
 
@@ -100,11 +85,17 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
 
         if graph.adj.get(u) is not None:
             for v, e in graph.adj[u]:
+
+                if u == 1413153:
+                    expectedRoute = True
+                else:
+                    expectedRoute = False
+                expectedRoute = False
                 
                 time_u_v, transfer_u_v = calc_cost(
                     previous_route_part[u]['arrival_time'], 
                     previous_route_part[u]['route'], 
-                    e)
+                    e, expectedRoute)
 
                 if time_u_v < timedelta.max:
 
@@ -134,6 +125,7 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
 def heuristics(first_stop, second_stop):
     return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
 
+@timer
 def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True, starting_route=None):
     open_v = PriorityQueue()
     closed_v = set()
@@ -424,12 +416,15 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
     print("best cost: ", best_cost)
     return best_solution, best_cost
 
-def user_route(starting_point, ending_point, algorithm_results):
+def get_user_route_from_alg_res(starting_point, ending_point, algorithm_results):
     cost, route_part = algorithm_results
 
     route = []
 
     current_stop = ending_point
+
+    if route_part[ending_point]['stop'] == -1:
+        return None, None
 
 
     single_train_route = {"route_name": route_part[current_stop]['route'], "stops": [], "start_time": route_part[current_stop]['arrival_time'], "end_time":  route_part[current_stop]['arrival_time']}
@@ -465,12 +460,26 @@ def user_route(starting_point, ending_point, algorithm_results):
 
 def display_user_route(graph, user_route):
     cost, route = user_route
-    
-    for r in route:
-        via = ', '.join(graph.nodes[i].name for i in  r['stops'][1:-1] if i in graph.nodes)
-        print(f"Train: {r['route_name']} Departure from {graph.nodes.get(r['stops'][0]).name} at {r['start_time'].strftime('%Y-%m-%d %H:%M')} {f'via {via} ' if via else ''}arrival at {graph.nodes.get(r['stops'][-1]).name} at {r['end_time'].strftime('%Y-%m-%d %H:%M')}")
 
+    if route is None:
+        print("\nSorry! We couldn't find a train for you.\n")
+        return False
+    
+    print("\n----------\n")
+    for r in route:
+        via = '\n\t\t'.join(graph.nodes[i].name for i in r['stops'][1:-1] if i in graph.nodes)
+        print(f"Train: {r['route_name']}")
+        print(f"\tDeparture from {graph.nodes.get(r['stops'][0]).name} at {r['start_time'].strftime('%Y-%m-%d %H:%M')}")
+        if via:
+            print(f"\tVia")
+            print(f'\t\t{via}')
+        print(f"\tArrival at {graph.nodes.get(r['stops'][-1]).name} at {r['end_time'].strftime('%Y-%m-%d %H:%M')}\n")
+
+    print('-----------')
     print(f"Travel time: {cost['time']} Number of transfers: {cost['transfers']}")
+    print('-----------\n')
+
+    return True
 
 
 if __name__ == '__main__':

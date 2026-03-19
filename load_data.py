@@ -1,6 +1,8 @@
 from graph import Graph, Node, Edge
 import pandas as pd
+from timer import timer
 
+@timer
 def create_graph(
         stops_file='stops.txt', 
         stop_times='stop_times.txt', 
