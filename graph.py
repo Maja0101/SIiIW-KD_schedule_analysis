@@ -25,12 +25,27 @@ class Graph:
     def __init__(self):
         self.nodes = {}
         self.adj = {}
+        self.departures = {}
 
     def add_node(self, node_id, node):
         self.nodes[node_id] = node
 
     def add_edge(self, node_id, next_node_id, edge):
         if node_id not in self.adj:
-            self.adj[node_id] = [(next_node_id, edge)]
+            self.adj[node_id] = {next_node_id: [edge]}
+
+        elif next_node_id not in self.adj[node_id]:
+            self.adj[node_id][next_node_id] = [edge]
+
         else:
-            self.adj[node_id].append((next_node_id, edge))
+            self.adj[node_id][next_node_id].append(edge)
+
+    def finish_initialisation(self):
+        self.departures = {node: {} for node in self.adj}
+        
+        for node_x in self.adj:
+            for node_y in self.adj[node_x]:
+                self.adj[node_x][node_y].sort(key = lambda e: e.departure_time)
+                self.departures[node_x][node_y] = [e.departure_time for e in self.adj[node_x][node_y]]
+
+

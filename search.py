@@ -1,6 +1,6 @@
 from datetime import datetime
 from load_data import create_graph
-from algorithms import dijkstra_algorithm, a_star_algorithm
+from algorithms import dijkstra_algorithm, a_star_algorithm, a_star_algorithm_old
 from user_route import display_user_route, get_user_route_from_alg_res
 from datetime import timedelta
 
@@ -93,46 +93,55 @@ if __name__ == '__main__':
     #             for key, val in edge[1].exceptions.items():
     #                 print(f"{key}\t\t{val}")
 
-    cost, previous_route_part = dijkstra_algorithm(graph, 1413153, datetime(2026, 3, 9, 8, 50))
-    user_route  = get_user_route_from_alg_res(1413153, 1413277, (cost, previous_route_part))
-    display_user_route(graph, user_route)
+    # cost, previous_route_part = dijkstra_algorithm(graph, 1413153, datetime(2026, 3, 9, 8, 50))
+    # user_route  = get_user_route_from_alg_res(1413153, 1413277, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
 
     # 1413085 Bojanowo
     # 1413291 Rawicz
     # 2026 03 06 23:40
 
-    # cost, previous_route_part = dijkstra_algorithm(graph, 1413085, datetime(2026, 3, 6, 23, 40))
+    # cost, previous_route_part = a_star_algorithm_old(graph, 1413085, 1413291, datetime(2026, 3, 6, 23, 40))
     # user_route  = get_user_route_from_alg_res(1413085, 1413291, (cost, previous_route_part))
     # display_user_route(graph, user_route)
 
+    # lądek zdrój -> zgorzelec
+    # cost, previous_route_part = dijkstra_algorithm(graph, 1413209, datetime(2026, 3, 6, 4, 40))
+    # user_route  = get_user_route_from_alg_res(1413209, 1413417, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
 
+    # cost, previous_route_part = a_star_algorithm_old(graph, 1413209, 1413417, datetime(2026, 3, 6, 4, 40))
+    # user_route  = get_user_route_from_alg_res(1413209, 1413417, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
+
+    cost, previous_route_part = a_star_algorithm(graph, 1413209, 1413417, datetime(2026, 3, 6, 4, 40))
+    user_route  = get_user_route_from_alg_res(1413209, 1413417, (cost, previous_route_part))
+    display_user_route(graph, user_route)
+
+    # 1413350 Tanvald zastávka
+    # 1413220 Löbau (Sachs)
+    # cost, previous_route_part = dijkstra_algorithm(graph, 1413350, datetime(2026, 3, 6, 4, 40))
+    # user_route  = get_user_route_from_alg_res(1413350, 1413220, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
+
+    # cost, previous_route_part = a_star_algorithm_old(graph, 1413350, 1413220, datetime(2026, 3, 6, 4, 40))
+    # user_route  = get_user_route_from_alg_res(1413350, 1413220, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
+
+    # cost, previous_route_part = a_star_algorithm(graph, 1413350, 1413220, datetime(2026, 3, 6, 4, 40))
+    # user_route  = get_user_route_from_alg_res(1413350, 1413220, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
 
 
     # while get_new_route(): 
     #     print('Input your route info:')
     #     route_input_data = get_data_for_new_route()
     #     print(f'\nSearching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'d' if route_input_data['dijkstra_alg_param'] else 'a'}, {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}\n')
-    #     # cost, previous_route_part = dijkstra_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'])
-    #     # cost, previous_route_part = dijkstra_algorithm(graph, 1413209, datetime(2026, 3, 21, 13, 25)) # ladek
     #     if route_input_data['dijkstra_alg_param']:
     #         cost, previous_route_part = dijkstra_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'])
     #     else:
-    #         cost, previous_route_part = a_star_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['destination'].idx, route_input_data['travel_start_time'], route_input_data['time_opt_param'])
-    #     # cost2, previous_route_part2 = a_star_algorithm(graph, 1413209, 1413355, datetime(2026, 3, 6, 13, 25), True)
-    #     # cost, previous_route_part = a_star_algorithm(graph, 1413380, 1413171, datetime(2026, 3, 20, 6, 10), True)
-    #     # cost, previous_route_part = dijkstra_algorithm(graph, 1413153, datetime(2026, 3, 9, 8, 45))
-    #     # cost, previous_route_part = a_star_algorithm(graph, 1413210, 1413185, datetime(2026, 3, 6, 13, 25), False)
-    #     # print(cost[1413380])
-    #     # print(cost[1413386])
-    #     # print(previous_route_part[1413380])
-    #     # print(previous_route_part[1413386])
-
-        
-        
+    #         cost, previous_route_part = a_star_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['destination'].idx, route_input_data['travel_start_time'], route_input_data['time_opt_param'])        
     #     user_route  = get_user_route_from_alg_res(route_input_data['starting_station'].idx, route_input_data['destination'].idx, (cost, previous_route_part))
-    #     # user_route2  = user_route(1413209, 1413355, (cost2, previous_route_part2)) # ladek -> trzebieszowice
-    #     #     # user_route  = user_route(1413153, 1413336, (cost, previous_route_part))
     #     display_user_route(graph, user_route)
-    #     # display_user_route(graph, user_route2)
     # else:
     #     print('Bye')

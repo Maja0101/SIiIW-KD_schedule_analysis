@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, date
 from sys import maxsize
 from geopy.distance import geodesic
 from timer import timer
+from bisect import bisect_left
 
 TRANSFER_TIME = timedelta(minutes=5)
 AVG_TRAVEL_TIME = 86.08
@@ -84,46 +85,113 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
         d, u = pq.pop()
 
         if graph.adj.get(u) is not None:
-            for v, e in graph.adj[u]:
-
-                # if u == 1413153 and v == 1413277:
-                #     expectedRoute = True
-                # else:
-                #     expectedRoute = False
-                expectedRoute = False
+            for v in graph.adj[u]:
+                for e in graph.adj[u][v]:
                 
-                time_u_v, transfer_u_v = calc_cost(
-                    previous_route_part[u]['arrival_time'], 
-                    previous_route_part[u]['route'], 
-                    e, expectedRoute)
+                    time_u_v, transfer_u_v = calc_cost(
+                        previous_route_part[u]['arrival_time'], 
+                        previous_route_part[u]['route'], 
+                        e)
 
-                if time_u_v < timedelta.max:
+                    if time_u_v < timedelta.max:
 
-                    if u == starting_point:
-                        temp_new_arrival_time = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
-                    else:
-                        temp_new_arrival_time = previous_route_part[u]['arrival_time'] + time_u_v
+                        if u == starting_point:
+                            temp_new_arrival_time = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
+                        else:
+                            temp_new_arrival_time = previous_route_part[u]['arrival_time'] + time_u_v
 
-                    is_equal_and_earlier_than_best_known_part = (cost[v]['time'] == cost[u]['time'] + time_u_v) and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
+                        is_equal_and_earlier_than_best_known_part = (cost[v]['time'] == cost[u]['time'] + time_u_v) and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
 
-                    if (cost[v]['time'] > cost[u]['time'] + time_u_v or is_equal_and_earlier_than_best_known_part):
-                        
-                        cost[v]['time'] = cost[u]['time'] + time_u_v
-                        cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
-                        previous_route_part[v]['stop'] = u
+                        if (cost[v]['time'] > cost[u]['time'] + time_u_v or is_equal_and_earlier_than_best_known_part):
+                            
+                            cost[v]['time'] = cost[u]['time'] + time_u_v
+                            cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
+                            previous_route_part[v]['stop'] = u
 
+                            previous_route_part[v]['arrival_time'] = temp_new_arrival_time
+                            previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
 
-                        previous_route_part[v]['arrival_time'] = temp_new_arrival_time
-    
-                        previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
-                        previous_route_part[v]['route'] = e.route_name
-                        pq.push(v, cost[v]['time'])
+                            previous_route_part[v]['route'] = e.route_name
+                            
+                            pq.push(v, cost[v]['time'])
 
 
     return cost, previous_route_part
 
 def heuristics(first_stop, second_stop):
     return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
+
+@timer
+def a_star_algorithm_old(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True, starting_route=None):
+    open_v = PriorityQueue()
+    closed_v = set()
+
+    cost = {key: {'time': timedelta.max, 'transfers': maxsize} for key in graph.nodes.keys()}
+
+    previous_route_part = {key: {'stop': -1, 'route': None, 'departure_time': None, 'arrival_time': None}  for key in graph.nodes.keys()} 
+
+    cost[starting_point]['time'] = timedelta(0)
+    cost[starting_point]['transfers'] = 0
+
+    previous_route_part[starting_point]['arrival_time'] = starting_datetime
+    previous_route_part[starting_point]['route'] = starting_route
+
+    open_v.push(starting_point, timedelta(0))
+
+    while not open_v.is_empty():
+
+        d, u = open_v.pop()
+
+        if u == ending_point:
+            return cost, previous_route_part
+
+        closed_v.add(u)
+
+        for v in graph.adj[u]:
+            if v in closed_v:
+                continue
+
+            edges = graph.adj[u][v]
+
+            arrival_to_u = previous_route_part[u]['arrival_time']
+
+            for e in edges:
+                time_u_v, transfer_u_v = calc_cost(
+                    arrival_to_u, 
+                    previous_route_part[u]['route'], 
+                    e)
+
+                is_not_infinite_cost = (optimize_by_time and time_u_v < timedelta.max) or (not optimize_by_time and transfer_u_v < maxsize)
+
+                if is_not_infinite_cost:
+
+                    if u == starting_point:
+                        temp_new_arrival_time = datetime(arrival_to_u.year, arrival_to_u.month, arrival_to_u.day) + e.arrival_time
+                    else:
+                        temp_new_arrival_time = arrival_to_u + time_u_v
+
+                    is_better_cost = (optimize_by_time and cost[v]['time'] > cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v)
+                    is_equal_cost = (optimize_by_time and cost[v]['time'] == cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v)
+                    is_equal_and_earlier_than_best_known_part = is_equal_cost and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
+
+                    if (is_better_cost or is_equal_and_earlier_than_best_known_part):
+                        
+                        cost[v]['time'] = cost[u]['time'] + time_u_v
+                        cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
+                        previous_route_part[v]['stop'] = u
+
+                        previous_route_part[v]['arrival_time'] = temp_new_arrival_time
+                        previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
+
+                        previous_route_part[v]['route'] = e.route_name
+
+                        f = cost[v]['time'] + heuristics(graph.nodes[v], graph.nodes[ending_point])
+                        if not optimize_by_time:
+                            f += cost[v]['transfers'] * TRANSFER_PENALTY
+                        
+                        open_v.push(v, f)
+
+    return cost, previous_route_part
 
 @timer
 def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True, starting_route=None):
@@ -151,45 +219,55 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
 
         closed_v.add(u)
 
-        for v, e in graph.adj[u]:
+        for v in graph.adj[u]:
             if v in closed_v:
                 continue
 
-            time_u_v, transfer_u_v = calc_cost(
-                previous_route_part[u]['arrival_time'], 
-                previous_route_part[u]['route'], 
-                e)
+            edges = graph.adj[u][v]
+            deps = graph.departures[u][v]
 
-            is_not_infinite_cost = (optimize_by_time and time_u_v < timedelta.max) or (not optimize_by_time and transfer_u_v < maxsize)
+            arrival_to_u = previous_route_part[u]['arrival_time']
+            arrival_to_u_td = timedelta(hours=arrival_to_u.hour, minutes=arrival_to_u.minute, seconds=arrival_to_u.second)
 
-            if is_not_infinite_cost:
+            idx = bisect_left(deps, arrival_to_u_td)
 
-                if u == starting_point:
-                    temp_new_arrival_time = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
-                else:
-                    temp_new_arrival_time = previous_route_part[u]['arrival_time'] + time_u_v
+            for i in range(idx, len(edges)):
+                e = edges[i]
 
-                is_better_cost = (optimize_by_time and cost[v]['time'] > cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v)
-                is_equal_cost = (optimize_by_time and cost[v]['time'] == cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v)
-                is_equal_and_earlier_than_best_known_part = is_equal_cost and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
+                time_u_v, transfer_u_v = calc_cost(
+                    arrival_to_u, 
+                    previous_route_part[u]['route'], 
+                    e)
 
-                if (is_better_cost or is_equal_and_earlier_than_best_known_part):
-                    
-                    cost[v]['time'] = cost[u]['time'] + time_u_v
-                    cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
-                    previous_route_part[v]['stop'] = u
+                is_not_infinite_cost = (optimize_by_time and time_u_v < timedelta.max) or (not optimize_by_time and transfer_u_v < maxsize)
+
+                if is_not_infinite_cost:
 
                     if u == starting_point:
-                        previous_route_part[v]['arrival_time'] = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
+                        temp_new_arrival_time = datetime(arrival_to_u.year, arrival_to_u.month, arrival_to_u.day) + e.arrival_time
                     else:
-                        previous_route_part[v]['arrival_time'] = previous_route_part[u]['arrival_time'] + time_u_v
-                    previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
-                    previous_route_part[v]['route'] = e.route_name
+                        temp_new_arrival_time = arrival_to_u + time_u_v
 
-                    f = cost[v]['time'] + heuristics(graph.nodes[v], graph.nodes[ending_point])
-                    if not optimize_by_time:
-                        f += cost[v]['transfers'] * TRANSFER_PENALTY
-                    open_v.push(v, f)
+                    is_better_cost = (optimize_by_time and cost[v]['time'] > cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v)
+                    is_equal_cost = (optimize_by_time and cost[v]['time'] == cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v)
+                    is_equal_and_earlier_than_best_known_part = is_equal_cost and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
+
+                    if (is_better_cost or is_equal_and_earlier_than_best_known_part):
+                        
+                        cost[v]['time'] = cost[u]['time'] + time_u_v
+                        cost[v]['transfers'] = cost[u]['transfers'] + transfer_u_v
+                        previous_route_part[v]['stop'] = u
+
+                        previous_route_part[v]['arrival_time'] = temp_new_arrival_time
+                        previous_route_part[v]['departure_time'] = previous_route_part[v]['arrival_time'] - (e.arrival_time - e.departure_time)
+
+                        previous_route_part[v]['route'] = e.route_name
+
+                        f = cost[v]['time'] + heuristics(graph.nodes[v], graph.nodes[ending_point])
+                        if not optimize_by_time:
+                            f += cost[v]['transfers'] * TRANSFER_PENALTY
+                        
+                        open_v.push(v, f)
 
     return cost, previous_route_part
 

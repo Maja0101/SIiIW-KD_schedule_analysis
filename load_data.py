@@ -99,4 +99,6 @@ def create_graph(
             previous_stop_id = next_stop_id
             departure_time = row.departure_time
 
+    graph.finish_initialisation()
+
     return graph
