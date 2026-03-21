@@ -5,6 +5,7 @@ from sys import maxsize
 from geopy.distance import geodesic
 from timer import timer
 from bisect import bisect_left
+import city_definition as city
 
 TRANSFER_TIME = timedelta(minutes=5)
 AVG_TRAVEL_TIME = 86.08
@@ -41,19 +42,20 @@ def runs_on_this_day(date, edge):
     return edge.weekdays[date.weekday()]
 
 def calc_cost(current_datetime, current_route, edge, ep=False):
-    if ep: print(f"{current_datetime}: {edge.start_date} - {edge.end_date} ({current_route})")
-
     if current_datetime > edge.start_date and current_datetime < edge.end_date:
-        if ep: print("between dates")
-        if ep: print(f"{edge.weekdays} - {edge.exceptions.get(current_datetime.date())}")
+        # if ep: print("between dates")
+        # if ep: print(f"{edge.weekdays} - {edge.exceptions.get(current_datetime.date())}")
 
         if runs_on_this_day(current_datetime.date(), edge):
+            if ep: print(f"{current_datetime}: {edge.start_date} - {edge.end_date} ({current_route})")
+
             curr_td = timedelta(hours=current_datetime.hour, minutes=current_datetime.minute, seconds=current_datetime.second)
             if ep: print(curr_td)
 
             if current_route is None and curr_td <= edge.departure_time:
                 if ep: print("first")
-                return edge.arrival_time - edge.departure_time, 0
+                # return edge.arrival_time - edge.departure_time, 0
+                return edge.arrival_time - curr_td, 0
 
             if edge.route_name == current_route and curr_td <= edge.departure_time:
                 if ep: print("no transfer")
@@ -83,17 +85,19 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
     while not pq.is_empty():
 
         d, u = pq.pop()
+        # print("---> u: ", graph.nodes[u].name)
 
         if graph.adj.get(u) is not None:
             for v in graph.adj[u]:
                 for e in graph.adj[u][v]:
-                
+
                     time_u_v, transfer_u_v = calc_cost(
                         previous_route_part[u]['arrival_time'], 
                         previous_route_part[u]['route'], 
                         e)
 
                     if time_u_v < timedelta.max:
+                        # print("v: ", graph.nodes[v].name, "t_u_v: ", time_u_v, "e: ", e.departure_time, e.arrival_time)
 
                         if u == starting_point:
                             temp_new_arrival_time = datetime(previous_route_part[u]['arrival_time'].year, previous_route_part[u]['arrival_time'].month, previous_route_part[u]['arrival_time'].day) + e.arrival_time
@@ -114,7 +118,7 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
                             previous_route_part[v]['route'] = e.route_name
                             
                             pq.push(v, cost[v]['time'])
-
+                            # print("+v: ", graph.nodes[v].name, "v: ", v, "c: ", time_u_v)
 
     return cost, previous_route_part
 
@@ -160,7 +164,7 @@ def a_star_algorithm_old(graph, starting_point, ending_point, starting_datetime,
                     arrival_to_u, 
                     previous_route_part[u]['route'], 
                     e)
-
+            
                 is_not_infinite_cost = (optimize_by_time and time_u_v < timedelta.max) or (not optimize_by_time and transfer_u_v < maxsize)
 
                 if is_not_infinite_cost:
@@ -214,14 +218,27 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
 
         d, u = open_v.pop()
 
+        # print("---> nowe u ", graph.nodes[u].name)
+
         if u == ending_point:
             return cost, previous_route_part
 
         closed_v.add(u)
 
         for v in graph.adj[u]:
+            # print("       v ", graph.nodes[v].name)
+
             if v in closed_v:
+                # print("       closed ")
                 continue
+
+            if (v == city.LEGNICA and u == city.KLODZKO) or (v == city.LEGNICA and u == city.WROCLAW) or (v == city.WROCLAW and u == city.KLODZKO): 
+                ep = True
+                # print("---> edge dla ", graph.nodes[u].name, " -> ", graph.nodes[v].name)
+            else:
+                ep = False
+
+            # print(graph.nodes[u].name, " -> ", graph.nodes[v].name, ep)
 
             edges = graph.adj[u][v]
             deps = graph.departures[u][v]
@@ -237,11 +254,12 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                 time_u_v, transfer_u_v = calc_cost(
                     arrival_to_u, 
                     previous_route_part[u]['route'], 
-                    e)
+                    e, ep)
 
                 is_not_infinite_cost = (optimize_by_time and time_u_v < timedelta.max) or (not optimize_by_time and transfer_u_v < maxsize)
 
                 if is_not_infinite_cost:
+                    if ep: print("calculated cost ", time_u_v, transfer_u_v)
 
                     if u == starting_point:
                         temp_new_arrival_time = datetime(arrival_to_u.year, arrival_to_u.month, arrival_to_u.day) + e.arrival_time
@@ -251,6 +269,9 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                     is_better_cost = (optimize_by_time and cost[v]['time'] > cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] > cost[u]['transfers'] + transfer_u_v)
                     is_equal_cost = (optimize_by_time and cost[v]['time'] == cost[u]['time'] + time_u_v) or (not optimize_by_time and cost[v]['transfers'] == cost[u]['transfers'] + transfer_u_v)
                     is_equal_and_earlier_than_best_known_part = is_equal_cost and (temp_new_arrival_time < previous_route_part[v]['arrival_time'])
+
+                    if ep: print("is_better_cost ", is_better_cost)
+                    if ep: print("is_equal_and_earlier_than_best_known_part ", is_equal_and_earlier_than_best_known_part)
 
                     if (is_better_cost or is_equal_and_earlier_than_best_known_part):
                         

@@ -81,6 +81,10 @@ def get_data_for_new_route():
 if __name__ == '__main__':
     graph = create_graph()
 
+    cost, previous_route_part = a_star_algorithm(graph, 1413380, 1413209, datetime(2026, 3, 6, 5, 50))
+    user_route  = get_user_route_from_alg_res(1413380, 1413209, (cost, previous_route_part))
+    display_user_route(graph, user_route)
+
     # 2026 03 09
     # 1413153 8:57 Harrachov
     # 1413277 9:07 Polana Jakuszycka
@@ -114,9 +118,9 @@ if __name__ == '__main__':
     # user_route  = get_user_route_from_alg_res(1413209, 1413417, (cost, previous_route_part))
     # display_user_route(graph, user_route)
 
-    cost, previous_route_part = a_star_algorithm(graph, 1413209, 1413417, datetime(2026, 3, 6, 4, 40))
-    user_route  = get_user_route_from_alg_res(1413209, 1413417, (cost, previous_route_part))
-    display_user_route(graph, user_route)
+    # cost, previous_route_part = a_star_algorithm(graph, 1413209, 1413417, datetime(2026, 3, 6, 4, 40))
+    # user_route  = get_user_route_from_alg_res(1413209, 1413417, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
 
     # 1413350 Tanvald zastávka
     # 1413220 Löbau (Sachs)

@@ -1,0 +1,4 @@
+# definicja miast 
+KLODZKO = 1413185
+WROCLAW = 1413380
+LEGNICA = 1413210
