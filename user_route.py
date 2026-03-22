@@ -10,19 +10,13 @@ def get_user_route_from_alg_res(starting_point, ending_point, algorithm_results)
 
 
     single_train_route = {"route_name": route_part[current_stop]['route'], "stops": [], "start_time": route_part[current_stop]['arrival_time'], "end_time":  route_part[current_stop]['arrival_time']}
-    # print("first s t r ", single_train_route)
     while current_stop != starting_point:
-        # print("while")
-        # print("curr stop ", current_stop)
-        # print("start stop ", starting_point)
         if single_train_route["route_name"] == route_part[current_stop]['route']:
             single_train_route["stops"].append(current_stop)
             single_train_route["start_time"] = route_part[current_stop]['departure_time']
-            # print("s t r ", single_train_route)
         else:
            single_train_route['stops'].append(current_stop)
            single_train_route['stops'].reverse()
-        #    print("final single route ", single_train_route)
            route.append(single_train_route)
            single_train_route = {"route_name": route_part[current_stop]['route'], "stops": [current_stop], "start_time": route_part[current_stop]['arrival_time'], "end_time":  route_part[current_stop]['arrival_time']} 
 
@@ -30,13 +24,8 @@ def get_user_route_from_alg_res(starting_point, ending_point, algorithm_results)
     
     single_train_route["stops"].append(current_stop)
     single_train_route['stops'].reverse()
-    # print("final single route ", single_train_route)
     route.append(single_train_route) 
     route.reverse()
-
-    # print("route: ")
-    # for r in route:
-    #     print(r)
 
     return cost[ending_point], route
 
