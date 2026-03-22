@@ -1,3 +1,5 @@
+from algorithms import a_star_algorithm
+
 def get_user_route_from_alg_res(starting_point, ending_point, algorithm_results):
     cost, route_part = algorithm_results
 
@@ -28,6 +30,30 @@ def get_user_route_from_alg_res(starting_point, ending_point, algorithm_results)
     route.reverse()
 
     return cost[ending_point], route
+
+def get_tsp_user_route_from_alg_res(graph, starting_point, starting_datetime, algorithm_results, opt_by_time):
+    full_cost, solution = algorithm_results
+
+    full_route = []
+
+    solution = [starting_point] + solution + [starting_point]
+
+    curr_datetime = starting_datetime
+    curr_route_name = None
+
+    for i in range(1, len(solution)):
+        cost, previous_route_part = a_star_algorithm(graph, solution[i-1], solution[i], curr_datetime, opt_by_time, curr_route_name)
+
+        part_cost, part_user_route  = get_user_route_from_alg_res(solution[i-1], solution[i], (cost, previous_route_part))
+        if part_cost is None:
+            return None, None
+
+        full_route.extend(part_user_route)
+
+        curr_datetime = previous_route_part[solution[i]]['arrival_time']
+        curr_route_name = previous_route_part[solution[i]]['route']
+
+    return full_cost, full_route
 
 def display_user_route(graph, user_route):
     cost, route = user_route

@@ -4,7 +4,7 @@ from datetime import timedelta, datetime
 from random import randint, choice
 from algorithms import a_star_algorithm, dijkstra_algorithm, heuristics_distance
 from load_data import create_graph
-from user_route import get_user_route_from_alg_res, display_user_route
+from user_route import get_user_route_from_alg_res, display_user_route, get_tsp_user_route_from_alg_res
 import city_definition as city
 
 def tsp_route_cost(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
@@ -318,17 +318,25 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
 
     print("best solution: ", best_solution)
     print("best cost: ", best_cost)
-    return best_solution, best_cost
+    return best_cost, best_solution
 
 if __name__ == "__main__":
     graph = create_graph()
-    best_solution, best_cost = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 6, 4, 55), True, 500)
+    best_cost, best_solution = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 6, 1, 55), True, 500)
+
+    # best_cost = {'time': timedelta(hours=6, minutes=50), 'transfers': 4}
+    # best_solution =  [1413423, 1413366, 1413347, 1413078, 1413185, 1413139, 1413284, 1413210, 1413386]
+
+    user_route = get_tsp_user_route_from_alg_res(graph, city.WROCLAW, datetime(2026, 3, 6, 1, 55), (best_cost, best_solution), True)
+    display_user_route(graph, user_route)
 
 
     # solution = [1413380, 1413365, 1413255, 1413185, 1413210, 1413380]
     # solution = [city.WROCLAW, 1413423, 1413366, 1413139, 1413347, 1413078, 1413185, 1413284, 1413210, 1413386, city.WROCLAW]
     # curr_datetime = datetime(2026, 3, 6, 4, 55)
     # curr_route = None
+
+
     # for i in range(1, len(solution)):
     #     print("starting_time ", curr_datetime, curr_route)
     #     cost, previous_route_part = a_star_algorithm(graph, solution[i-1], solution[i], curr_datetime, starting_route=curr_route)
