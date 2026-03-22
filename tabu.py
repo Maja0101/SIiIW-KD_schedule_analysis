@@ -1,7 +1,8 @@
 from sys import maxsize
 from collections import deque, defaultdict
 from datetime import timedelta, datetime
-from algorithms import a_star_algorithm, dijkstra_algorithm
+from random import randint, choice
+from algorithms import a_star_algorithm, dijkstra_algorithm, heuristics_distance
 from load_data import create_graph
 from user_route import get_user_route_from_alg_res, display_user_route
 import city_definition as city
@@ -103,10 +104,171 @@ def generate_neighbours_paths(stops_to_visit, starting_point):
             # print("new stops to visit ", new_stops_to_visit)
             # print("added ", added, "removed ", removed)
 
+            # string = "+ "
+            # for s in new_stops_to_visit:
+            #     string += graph.nodes[s].name + " -> "
+            # print(string)
+
             neighbours.append((new_stops_to_visit, added, removed))
 
     # print("neighbours: ", neighbours)
     return neighbours
+
+def build_candidate_list(graph, nodes, k, heuristics_func=heuristics_distance):
+    promising_candidates = {}
+
+    for u in nodes:
+        # print("--u ", graph.nodes[u].name)
+
+        scored = []
+
+        for v in nodes:
+
+            if v == u:
+                continue
+
+            score = heuristics_func(graph.nodes[u], graph.nodes[v])
+            scored.append((score, v))
+            # print("---v ", graph.nodes[v].name, " s: ", score)
+
+        scored.sort(key=lambda x: x[0])
+        # print("sorted ", scored)
+
+        promising_candidates[u] = [v for _, v in scored[:k]]
+        # print("promising ", promising_candidates)
+
+    return promising_candidates
+
+def generate_mixed_neighbours(stops_to_visit, starting_point, promising_candidates, sample_size, alpha=0.7):
+    # print("generate mixed neighbours")
+    # print(" ---- > ", stops_to_visit)
+    neighbours = []
+
+    full_stops_list = [starting_point] + stops_to_visit + [starting_point]
+    n = len(full_stops_list)
+
+    # print("sample size ", sample_size)
+    num_close_candidates = int(sample_size * alpha)
+    num_random_candidates = sample_size - num_close_candidates
+    # print("close candidates len ", num_close_candidates)
+    # print("random candidates len ", num_random_candidates)
+
+    seen = set()
+    added_count = 0
+
+    # for _ in range(num_close_candidates):
+    while added_count <= num_close_candidates:
+        # print("added count ", added_count)
+        # print("close ", len(neighbours))
+
+        i = randint(1, n - 3)
+        u = full_stops_list[i]
+
+        if u not in promising_candidates:
+            continue
+
+        v = choice(promising_candidates[u])
+
+        if v not in stops_to_visit:
+            continue
+
+        j = stops_to_visit.index(v) + 1
+
+        if j <= i or j >= n - 1:
+            continue
+
+        new_stops_to_visit = stops_to_visit.copy()
+        new_stops_to_visit[i-1:j] = reversed(new_stops_to_visit[i-1:j])
+
+        a = full_stops_list[i - 1]
+        b = full_stops_list[i]
+        c = full_stops_list[j]
+        d = full_stops_list[j + 1]
+
+        removed = [(a, b), (c, d)]
+        added = [(a, c), (b, d)]
+
+        # string = "+ "
+        # for s in new_stops_to_visit:
+        #     string += graph.nodes[s].name + " -> "
+        # print(string)
+
+        # print("+ ", new_stops_to_visit)
+        # print("     ", added, removed)
+
+        key = tuple(new_stops_to_visit)
+        if key not in seen:
+            seen.add(key)
+            neighbours.append((new_stops_to_visit, added, removed))
+            added_count += 1
+
+        # neighbours.append((new_stops_to_visit, added, removed))
+
+    # print("close neighbours ")
+    # print(neighbours)
+
+    # for _ in range(num_random_candidates):
+    while added_count < sample_size:
+        # print("added count ", added_count)
+        # print("random ", len(neighbours))
+
+        i = randint(1, n - 3)
+        j = randint(i + 1, n - 2)
+
+        new_stops_to_visit = stops_to_visit.copy()
+        new_stops_to_visit[i-1:j] = reversed(new_stops_to_visit[i-1:j])
+
+        a = full_stops_list[i - 1]
+        b = full_stops_list[i]
+        c = full_stops_list[j]
+        d = full_stops_list[j + 1]
+
+        removed = [(a, b), (c, d)]
+        added = [(a, c), (b, d)]
+
+        # print("+ ", new_stops_to_visit)
+        # print("     ", added, removed)
+
+        # neighbours.append((new_stops_to_visit, added, removed))
+
+        key = tuple(new_stops_to_visit)
+        if key not in seen:
+            seen.add(key)
+            neighbours.append((new_stops_to_visit, added, removed))
+            added_count += 1
+
+    # print("all neighbours ")
+    # print(neighbours)
+    # neighbours_without_duplicates = [list(t) for t in set(tuple(t) for t in neighbours)]
+
+    # seen = set()
+    # unique = []
+    # for stops, added, removed in neighbours:
+    #     key = tuple(stops)
+    #     if key not in seen:
+    #         seen.add(key)
+    #         unique.append((stops, added, removed))
+    # neighbours_without_duplicates = unique
+
+    # string = "+ "
+    # for stops, _, _ in neighbours:
+    #     for s in stops:
+    #         string += graph.nodes[s].name + " -> "
+    #     print(string)
+    #     string = "+ "
+
+    return neighbours
+
+def generate_neighbours_advanced(best_cost, stops_to_visit, starting_point, promising_candidates, sample_size, alpha):
+    if best_cost['time'] == timedelta.max:
+        # print("all")
+        neighbours = generate_neighbours_paths(stops_to_visit, starting_point)
+    else:
+        # print("part")
+        neighbours = generate_mixed_neighbours(stops_to_visit, starting_point, promising_candidates, sample_size, alpha)
+
+    return neighbours
+
 
 def initial_solution(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
     return stops_to_visit
@@ -173,15 +335,43 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
 
     best_cost = tsp_route_cost(graph, best_solution, starting_point, starting_datetime)
 
+    if n <= 5:
+        k = max(1, n-1)
+        sample_size = ((n-1)*n)//2
+    elif n <= 15:
+        k = 10
+        sample_size = ((n-1)*n)//4
+        # print("sample size ", sample_size)
+    elif n <= 50:
+        k = 20
+        sample_size = 50
+    else:
+        k = 30
+        sample_size = 50
+
+    # k = 100
+    # sample_size = 100
+
+
+    promising_candidates = build_candidate_list(
+        graph,
+        stops_to_visit + [starting_point],
+        k
+    )
+
     iteration = 0
     no_improvement = 0
 
     while iteration < max_iter:
         iteration += 1
         print("\niteration: ", iteration)
+        print("iter begin best ", best_cost)
 
         # neighbours = generate_neighbours(curr_solution)
-        neighbours = generate_neighbours_paths(curr_solution, starting_point)
+        # neighbours = generate_neighbours_paths(curr_solution, starting_point)
+        # neighbours = generate_mixed_neighbours(curr_solution, starting_point, promising_candidates, sample_size)
+        neighbours = generate_neighbours_advanced(best_cost, curr_solution, starting_point, promising_candidates, sample_size, 0.7)
+        # print("neighbours: ", len(neighbours))
 
         best_candidate = None
         best_candidate_cost = {'time': timedelta.max, 'transfers': maxsize}
@@ -199,12 +389,12 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
             #     continue
 
             cost = tsp_route_cost(graph, candidate, starting_point, starting_datetime)
-            # print("cost ", cost)
+            print("cost ", cost)
 
 
             has_tabu_edges = any(e in tabu_set for e in added)
             better_time_cost = optimize_by_time and cost['time'] < best_cost['time']
-            better_transfer_cost = not optimize_by_time and cost['transfer'] < best_cost['transfers']
+            better_transfer_cost = not optimize_by_time and cost['transfers'] < best_cost['transfers']
 
             if (not has_tabu_edges) or (better_time_cost or better_transfer_cost):
                 is_tabu = False
@@ -217,18 +407,19 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
             if is_tabu:
                 continue
 
-            if (optimize_by_time and cost['time'] < best_candidate_cost['time']) or (not optimize_by_time and cost['transfers'] < best_cost['transfers']):
+            if (optimize_by_time and cost['time'] < best_candidate_cost['time']) or (not optimize_by_time and cost['transfers'] < best_candidate_cost['transfers']):
             # if aspiration_cost < best_candidate_cost['time']:
                 # print("better")
                 best_candidate = candidate
                 best_candidate_cost = cost
+                print("best candidate cost ", best_candidate_cost)
                 # best_candidate_cost['time'] = aspiration_cost
                 best_added_paths = added
                 best_removed_paths = removed
                 # print("now best: ", best_candidate, best_candidate_cost, best_added_paths, best_removed_paths)
 
         if best_candidate is None:
-            # print("no best")
+            print("no best")
             break
 
         curr_solution = best_candidate
@@ -287,7 +478,7 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
 
 if __name__ == "__main__":
     graph = create_graph()
-    best_solution, best_cost = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 6, 4, 55), True, 500)
+    best_solution, best_cost = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 6, 4, 55), False, 500)
 
 
     # solution = [1413380, 1413365, 1413255, 1413185, 1413210, 1413380]

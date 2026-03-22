@@ -122,8 +122,12 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime):
 
     return cost, previous_route_part
 
+def heuristics_distance(first_stop, second_stop):
+    return geodesic(first_stop.coordinates, second_stop.coordinates).km
+
 def heuristics(first_stop, second_stop):
-    return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
+    return timedelta(seconds=int(heuristics_distance(first_stop, second_stop) / AVG_TRAVEL_TIME * 3600)) 
+    # return timedelta(seconds=int(geodesic(first_stop.coordinates, second_stop.coordinates).km / AVG_TRAVEL_TIME * 3600)) 
 
 @timer
 def a_star_algorithm_old(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True, starting_route=None):
