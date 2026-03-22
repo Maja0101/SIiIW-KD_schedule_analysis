@@ -6,6 +6,7 @@ from algorithms import a_star_algorithm, dijkstra_algorithm, heuristics_distance
 from load_data import create_graph
 from user_route import get_user_route_from_alg_res, display_user_route, get_tsp_user_route_from_alg_res
 import city_definition as city
+from timer import timer
 
 def tsp_route_cost(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
     curr_stop = starting_point
@@ -211,6 +212,7 @@ def initial_solution(graph, stops_to_visit, starting_point, starting_datetime, o
     print("initial solution: ", initial_solution)
     return initial_solution
 
+@timer
 def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, optimize_by_time=True, max_iter=500):
     n = len(stops_to_visit)
 

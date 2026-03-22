@@ -14,7 +14,7 @@ def suppress_timer(files):
             continue
     return False
 
-def timer(func, files_to_suppress=['tabu.py']):
+def timer(func, files_to_suppress=['tabu.py', 'user_route.py']):
     def wrap(*args, **kwargs):
         if suppress_timer(files_to_suppress):
             res = func(*args, **kwargs)
