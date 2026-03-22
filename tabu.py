@@ -163,15 +163,9 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
     # TABU_SIZE = 2
     # print("tabu size ", TABU_SIZE)
     NO_IMPROVEMENT_THRESHOLD = max(5, max_iter // 20) 
-    k = 10
-    HISTORY_SIZE = k
-    epsilon = 0.01
 
     tabu_queue = deque(maxlen=TABU_SIZE)
     tabu_set = set()
-
-    history = defaultdict(int)
-    history_queue = deque(maxlen=HISTORY_SIZE)
 
     curr_solution = initial_solution(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time)
 
@@ -207,30 +201,28 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
             cost = tsp_route_cost(graph, candidate, starting_point, starting_datetime)
             # print("cost ", cost)
 
-            bonus = 0
-            for e in added:
-                bonus += (k - history[e])
 
-            # if cost['time'] < timedelta.max:
-            aspiration_cost = cost['time'] - timedelta(seconds=(epsilon*bonus))
-            # else:
-                # aspiration_cost = cost['time']
+            has_tabu_edges = any(e in tabu_set for e in added)
+            better_time_cost = optimize_by_time and cost['time'] < best_cost['time']
+            better_transfer_cost = not optimize_by_time and cost['transfer'] < best_cost['transfers']
 
-            tabu_edges = any(e in tabu_set for e in added)
-            if not tabu_edges or cost['time'] < aspiration_cost:
-                is_move_allowed = True
+            if (not has_tabu_edges) or (better_time_cost or better_transfer_cost):
+                is_tabu = False
             else:
-                is_move_allowed = False
+                is_tabu = True
 
-            if not is_move_allowed:
+            if (has_tabu_edges and (better_time_cost or better_transfer_cost) is True):
+                print(not has_tabu_edges,"(", better_time_cost, better_transfer_cost, ") --> ", is_tabu)
+
+            if is_tabu:
                 continue
 
-            # if (optimize_by_time and cost['time'] < best_candidate_cost['time']) or (not optimize_by_time and cost['transfers'] < best_cost['transfers']):
-            if aspiration_cost < best_candidate_cost['time']:
+            if (optimize_by_time and cost['time'] < best_candidate_cost['time']) or (not optimize_by_time and cost['transfers'] < best_cost['transfers']):
+            # if aspiration_cost < best_candidate_cost['time']:
                 # print("better")
                 best_candidate = candidate
                 best_candidate_cost = cost
-                best_candidate_cost['time'] = aspiration_cost
+                # best_candidate_cost['time'] = aspiration_cost
                 best_added_paths = added
                 best_removed_paths = removed
                 # print("now best: ", best_candidate, best_candidate_cost, best_added_paths, best_removed_paths)
@@ -252,13 +244,13 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
             tabu_queue.append(path)
             tabu_set.add(path)
 
-        for path in best_added_paths:
-            history[path] += 1
-            history_queue.append(path)
+        # for path in best_added_paths:
+        #     history[path] += 1
+        #     history_queue.append(path)
 
-            if len(history_queue) > history_queue.maxlen:
-                old = history_queue.popleft()
-                history[old] -= 1
+        #     if len(history_queue) > history_queue.maxlen:
+        #         old = history_queue.popleft()
+        #         history[old] -= 1
 
         # print("tabu queue len ", len(tabu_queue))
         # print("tabu set ", tabu_set)
@@ -276,8 +268,8 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
         else:
             no_improvement += 1
 
-        print("history ", history_queue)
-        print("history dict ", history)
+        # print("history ", history_queue)
+        # print("history dict ", history)
 
         # print("best:")
         # print(best_solution)
