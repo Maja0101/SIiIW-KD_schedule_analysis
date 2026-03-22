@@ -197,7 +197,7 @@ def a_star_algorithm_old(graph, starting_point, ending_point, starting_datetime,
 
     return cost, previous_route_part
 
-@timer
+# @timer
 def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, optimize_by_time=True, starting_route=None):
     open_v = PriorityQueue()
     closed_v = set()
@@ -232,11 +232,13 @@ def a_star_algorithm(graph, starting_point, ending_point, starting_datetime, opt
                 # print("       closed ")
                 continue
 
-            if (v == city.LEGNICA and u == city.KLODZKO) or (v == city.LEGNICA and u == city.WROCLAW) or (v == city.WROCLAW and u == city.KLODZKO): 
-                ep = True
-                # print("---> edge dla ", graph.nodes[u].name, " -> ", graph.nodes[v].name)
-            else:
-                ep = False
+            # if (v == city.LEGNICA and u == city.KLODZKO) or (v == city.LEGNICA and u == city.WROCLAW) or (v == city.WROCLAW and u == city.KLODZKO): 
+            #     ep = True
+            #     # print("---> edge dla ", graph.nodes[u].name, " -> ", graph.nodes[v].name)
+            # else:
+            #     ep = False
+
+            ep = False
 
             # print(graph.nodes[u].name, " -> ", graph.nodes[v].name, ep)
 
