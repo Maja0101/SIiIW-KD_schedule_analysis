@@ -158,10 +158,13 @@ def generate_mixed_neighbours(stops_to_visit, starting_point, promising_candidat
 
 def generate_neighbours_advanced(best_cost, stops_to_visit, starting_point, promising_candidates, sample_size, alpha):
     if best_cost['time'] == timedelta.max:
+        # print("all")
         neighbours = generate_neighbours_paths(stops_to_visit, starting_point)
     else:
+        # print("part")
         neighbours = generate_mixed_neighbours(stops_to_visit, starting_point, promising_candidates, sample_size, alpha)
 
+    # print(len(neighbours))
     return neighbours
 
 
@@ -329,14 +332,15 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
     return best_cost, best_solution
 
 if __name__ == "__main__":
-    graph = create_graph()
-    best_cost, best_solution = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 6, 1, 55), True, 500)
+    pass
+    # graph = create_graph()
+    # best_cost, best_solution = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 6, 1, 55), True, 500)
 
-    # best_cost = {'time': timedelta(hours=6, minutes=50), 'transfers': 4}
-    # best_solution =  [1413423, 1413366, 1413347, 1413078, 1413185, 1413139, 1413284, 1413210, 1413386]
+    # # best_cost = {'time': timedelta(hours=6, minutes=50), 'transfers': 4}
+    # # best_solution =  [1413423, 1413366, 1413347, 1413078, 1413185, 1413139, 1413284, 1413210, 1413386]
 
-    user_route = get_tsp_user_route_from_alg_res(graph, city.WROCLAW, datetime(2026, 3, 6, 1, 55), (best_cost, best_solution), True)
-    display_user_route(graph, user_route)
+    # user_route = get_tsp_user_route_from_alg_res(graph, city.WROCLAW, datetime(2026, 3, 5, 1, 55), (best_cost, best_solution), True)
+    # display_user_route(graph, user_route)
 
 
     # solution = [1413380, 1413365, 1413255, 1413185, 1413210, 1413380]

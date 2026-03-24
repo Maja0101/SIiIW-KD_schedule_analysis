@@ -4,6 +4,8 @@ from algorithms import dijkstra_algorithm, a_star_algorithm
 from tabu import tabu_search_tsp
 from user_route import display_user_route, get_user_route_from_alg_res, get_tsp_user_route_from_alg_res
 from datetime import timedelta
+from loggers import log_debug
+import city_definition as city
 
 MIN_DATE = datetime(2026, 3, 3, 0, 0)
 MAX_DATE = datetime(2026, 12, 12, 23, 59)
@@ -114,30 +116,46 @@ def get_data_for_new_route():
 if __name__ == '__main__':
     graph = create_graph()
 
-    while get_new_route(): 
-        print('Input your route info:')
-        route_input_data = get_data_for_new_route()
+    # cost, previous_route_part = a_star_algorithm(graph, city.LADEK_ZDROJ, city.WROCLAW, datetime(2026, 3, 5, 22, 0), False)       
+    # user_route  = get_user_route_from_alg_res(city.LADEK_ZDROJ, city.WROCLAW, (cost, previous_route_part))
+    # display_user_route(graph, user_route)
 
-        if route_input_data['single_route_param']:
 
-            print(f'\nSearching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'d' if route_input_data['dijkstra_alg_param'] else 'a'}, {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}\n')
+    # Przekroczenie dnia pośrednio
+    # best_cost, best_solution = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 1, 16, 0), True)
+    # user_route = get_tsp_user_route_from_alg_res(graph, city.WROCLAW, datetime(2026, 3, 1, 16, 0), (best_cost, best_solution), True)
+    # display_user_route(graph, user_route)
+
+    # To samo dla przesiadek
+    # best_cost, best_solution = tabu_search_tsp(graph, city.WROCLAW, [city.BIERKOWICE, city.WROCLAW_MUCHOBOR, city.ZAROW, city.LEGNICA, city.GLUSZYCA, city.SWIERKI_DOLNE, city.PRZYBYLOWICE, city.KLODZKO, city.WALBRZYCH_MIASTO], datetime(2026, 3, 1, 16, 0), False)
+    # user_route = get_tsp_user_route_from_alg_res(graph, city.WROCLAW, datetime(2026, 3, 1, 16, 0), (best_cost, best_solution), False)
+    # display_user_route(graph, user_route)
+
+    # while get_new_route(): 
+    #     print('Input your route info:')
+    #     route_input_data = get_data_for_new_route()
+    #     print()
+
+    #     if route_input_data['single_route_param']:
+
+    #         log_debug(f'Searching for: {route_input_data['starting_station']} -> {route_input_data['destination']}; {'d' if route_input_data['dijkstra_alg_param'] else 'a'}, {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}')
         
-            if route_input_data['dijkstra_alg_param']:
-                cost, previous_route_part = dijkstra_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'])
-            else:
-                cost, previous_route_part = a_star_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['destination'].idx, route_input_data['travel_start_time'], route_input_data['time_opt_param'])        
+    #         if route_input_data['dijkstra_alg_param']:
+    #             cost, previous_route_part = dijkstra_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'])
+    #         else:
+    #             cost, previous_route_part = a_star_algorithm(graph, route_input_data['starting_station'].idx, route_input_data['destination'].idx, route_input_data['travel_start_time'], route_input_data['time_opt_param'])        
             
-            user_route  = get_user_route_from_alg_res(route_input_data['starting_station'].idx, route_input_data['destination'].idx, (cost, previous_route_part))
-            display_user_route(graph, user_route)
+    #         user_route  = get_user_route_from_alg_res(route_input_data['starting_station'].idx, route_input_data['destination'].idx, (cost, previous_route_part))
+    #         display_user_route(graph, user_route)
 
-        else:
+    #     else:
 
-            print(f'\nSearching for tsp from: {route_input_data['starting_station']}; {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}\n')
+    #         log_debug(f'Searching for tsp from: {route_input_data['starting_station']}; {'t' if route_input_data['time_opt_param'] else 'p'}; {route_input_data['travel_start_time'].strftime('%Y-%m-%d %H:%M')}')
 
-            best_cost, best_solution = tabu_search_tsp(graph, route_input_data['starting_station'].idx, route_input_data['destinations_ids'], route_input_data['travel_start_time'], route_input_data['time_opt_param'])
+    #         best_cost, best_solution = tabu_search_tsp(graph, route_input_data['starting_station'].idx, route_input_data['destinations_ids'], route_input_data['travel_start_time'], route_input_data['time_opt_param'])
 
-            user_route = get_tsp_user_route_from_alg_res(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'], (best_cost, best_solution), route_input_data['time_opt_param'])
-            display_user_route(graph, user_route)
+    #         user_route = get_tsp_user_route_from_alg_res(graph, route_input_data['starting_station'].idx, route_input_data['travel_start_time'], (best_cost, best_solution), route_input_data['time_opt_param'])
+    #         display_user_route(graph, user_route)
 
-    else:
-        print('Bye')
+    # else:
+    #     print('Bye')
