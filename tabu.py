@@ -6,7 +6,7 @@ from algorithms import a_star_algorithm, dijkstra_algorithm, heuristics_distance
 from load_data import create_graph
 from user_route import get_user_route_from_alg_res, display_user_route, get_tsp_user_route_from_alg_res
 import city_definition as city
-from timer import timer
+from loggers import log_time, log_inline, log_inline_end
 
 def tsp_route_cost(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
     curr_stop = starting_point
@@ -212,8 +212,12 @@ def initial_solution(graph, stops_to_visit, starting_point, starting_datetime, o
     print("initial solution: ", initial_solution)
     return initial_solution
 
-@timer
-def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, optimize_by_time=True, max_iter=500):
+@log_time()
+def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, optimize_by_time=True, max_iter=500, **kwargs):
+    log_is_allowed = kwargs.get("_log_if_allowed")
+    if log_is_allowed:
+        log_is_allowed("tabu_search_tsp was executed wtih param %s", 'time' if optimize_by_time else 'transfers')
+
     n = len(stops_to_visit)
 
     TABU_SIZE = max(5, n // 2)
@@ -252,8 +256,8 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
 
     while iteration < max_iter:
         iteration += 1
-        print("\niteration: ", iteration)
-        # print("iter begin best ", best_cost)
+        
+        log_inline('|')
 
         neighbours = generate_neighbours_advanced(best_cost, curr_solution, starting_point, promising_candidates, sample_size, 0.7)
 
@@ -318,8 +322,10 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
         if no_improvement >= NO_IMPROVEMENT_THRESHOLD:
             break
 
-    print("best solution: ", best_solution)
-    print("best cost: ", best_cost)
+    log_inline_end()
+    
+    # print("best solution: ", best_solution)
+    # print("best cost: ", best_cost)
     return best_cost, best_solution
 
 if __name__ == "__main__":

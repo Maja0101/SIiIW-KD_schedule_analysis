@@ -1,15 +1,16 @@
 from graph import Graph, Node, Edge
 import pandas as pd
-from timer import timer
+from loggers import log_time
 
-@timer
+@log_time()
 def create_graph(
         stops_file='stops.txt', 
         stop_times='stop_times.txt', 
         trips_file='trips.txt', 
         routes_file='routes.txt', 
         calendar_file='calendar.txt', 
-        calendar_dates_file='calendar_dates.txt'):
+        calendar_dates_file='calendar_dates.txt',
+        **kwargs):
     # creating empty graph
     graph = Graph()
 
