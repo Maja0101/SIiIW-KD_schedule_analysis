@@ -93,7 +93,7 @@ def process_edge(graph, queue, u, v, e, arrival_to_u, previous_route_part, cost,
 def dijkstra_algorithm(graph, starting_point, starting_datetime, optimize_by_time=True, **kwargs):
     log_is_allowed = kwargs.get("_log_if_allowed")
     if log_is_allowed:
-        log_is_allowed("dijkstra_algorithm was executed wtih param time")
+        log_is_allowed("dijkstra_algorithm was executed wtih param %s", 'time' if optimize_by_time else 'transfers')
 
     pq = PriorityQueue()
 
@@ -114,11 +114,18 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime, optimize_by_tim
 
         for v in graph.adj[u]:
 
+            edges = graph.adj[u][v]
+            deps = graph.departures[u][v]
+
             arrival_to_u = previous_route_part[u]['arrival_time']
+            arrival_to_u_td = timedelta(hours=arrival_to_u.hour, minutes=arrival_to_u.minute, seconds=arrival_to_u.second)
+
+            idx = bisect_left(deps, arrival_to_u_td)
 
             no_path_in_current_day = True
             
-            for e in graph.adj[u][v]:
+            for i in range(idx, len(edges)):
+                e = edges[i]
                 path_was_found = process_edge(graph, pq, u, v, e, arrival_to_u, previous_route_part, cost, optimize_by_time)
                 if path_was_found:
                     no_path_in_current_day = False
@@ -127,7 +134,8 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime, optimize_by_tim
                 next_day_midnight = (arrival_to_u + timedelta(days=1)).replace(hour=0, minute=0, second=0)
                 delta_u = next_day_midnight - arrival_to_u
 
-                for e in graph.adj[u][v]:
+                for i in range(len(edges)):
+                    e = edges[i]
                     path_was_found = process_edge(graph, pq, u, v, e, arrival_to_u, previous_route_part, cost, optimize_by_time, delta_u=delta_u)
                     if path_was_found:
                         no_path_in_current_day = False
