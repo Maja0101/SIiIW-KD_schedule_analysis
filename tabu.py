@@ -215,7 +215,6 @@ def tabu_search_tsp(graph, starting_point, stops_to_visit, starting_datetime, op
     tabu_queue = deque(maxlen=tabu_size)
     tabu_set = set()
 
-    # curr_solution = initial_solution(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time)
     curr_solution = stops_to_visit
 
     best_solution = curr_solution.copy() 
