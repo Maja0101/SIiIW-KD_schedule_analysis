@@ -6,8 +6,9 @@ from loggers import log_time, SUPRESS
 from bisect import bisect_left
 
 TRANSFER_TIME = timedelta(minutes=5)
-AVG_TRAVEL_TIME = 86.08
+AVG_TRAVEL_TIME = 160
 TRANSFER_PENALTY = timedelta(hours=12)
+TRANSFER_PENALTY_KM = 50
 
 class PriorityQueue:
     def __init__(self):
@@ -23,6 +24,7 @@ class PriorityQueue:
         return not self.items
 
 def runs_on_this_day(date, edge):
+    # Returns true if has exception 1 (path added) or runs on specified weekday 
     exc = edge.exceptions.get(date)
     if exc is not None:
         if exc == 1:
@@ -32,6 +34,8 @@ def runs_on_this_day(date, edge):
     return edge.weekdays[date.weekday()]
 
 def calc_cost(current_datetime, current_route, edge):
+    # Checks if specified datetime is beetwen start and end date for edge, runs on specified day
+    # Calculates time cost and transfers cost, considering needed trasfer time
     if current_datetime > edge.start_date and current_datetime < edge.end_date:
 
          if runs_on_this_day(current_datetime.date(), edge):
@@ -47,6 +51,7 @@ def calc_cost(current_datetime, current_route, edge):
     return timedelta.max, maxsize
 
 def process_edge(graph, queue, u, v, e, arrival_to_u, previous_route_part, cost, optimize_by_time=True, ending_point=None, delta_u=timedelta(0)):
+    # Process one edge 
     time_u_v, transfer_u_v = calc_cost(arrival_to_u, previous_route_part[u]['route'], e)
 
     is_infinite_cost = time_u_v == timedelta.max
@@ -77,13 +82,17 @@ def process_edge(graph, queue, u, v, e, arrival_to_u, previous_route_part, cost,
 
         previous_route_part[v]['route'] = e.route_name
 
-        f = cost[v]['time']
-
         if ending_point is not None:
-            f += heuristics(graph.nodes[v], graph.nodes[ending_point])
-
-        if not optimize_by_time:
-            f += cost[v]['transfers'] * TRANSFER_PENALTY
+            if optimize_by_time:
+                f = cost[v]['time'] + heuristics_time(graph.nodes[v], graph.nodes[ending_point])
+            else:
+                f = cost[v]['transfers'] * TRANSFER_PENALTY_KM + heuristics_distance(graph.nodes[v], graph.nodes[ending_point])
+        else:
+            if optimize_by_time:
+                f = cost[v]['time']
+            else:
+                f = cost[v]['transfers']
+            
             
         queue.push(v, f)
 
@@ -143,9 +152,11 @@ def dijkstra_algorithm(graph, starting_point, starting_datetime, optimize_by_tim
     return cost, previous_route_part
 
 def heuristics_distance(first_stop, second_stop):
+    # Heuristics based on distance
     return geodesic(first_stop.coordinates, second_stop.coordinates).km
 
-def heuristics(first_stop, second_stop):
+def heuristics_time(first_stop, second_stop):
+    # Converting distance to time based on train abg travel time
     return timedelta(seconds=int(heuristics_distance(first_stop, second_stop) / AVG_TRAVEL_TIME * 3600)) 
 
 @log_time(SUPRESS)
