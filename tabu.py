@@ -6,6 +6,7 @@ from algorithms import a_star_algorithm, heuristics_distance
 from loggers import log_time, log_inline, log_inline_end
 
 def tsp_route_cost(graph, stops_to_visit, starting_point, starting_datetime, optimize_by_time=True):
+    # Cost for a whole route
     curr_stop = starting_point
     curr_datetime = starting_datetime
     curr_route = None
@@ -39,6 +40,7 @@ def path(a, b):
     return tuple(sorted((a, b)))
 
 def generate_neighbours_paths(stops_to_visit, starting_point):
+    # All possible neighbours
     neighbours = []
 
     full_stops_list = [starting_point] + stops_to_visit + [starting_point]
@@ -63,6 +65,7 @@ def generate_neighbours_paths(stops_to_visit, starting_point):
     return neighbours
 
 def build_candidate_list(graph, nodes, k, heuristics_func=heuristics_distance):
+    # Use heuristics to determine promising candidates (closest nodes) for every node
     promising_candidates = {}
 
     for u in nodes:
@@ -84,6 +87,7 @@ def build_candidate_list(graph, nodes, k, heuristics_func=heuristics_distance):
     return promising_candidates
 
 def generate_mixed_neighbours(stops_to_visit, starting_point, promising_candidates, sample_size, alpha=0.7):
+    # Generate some neighbours based on closest nodes and some random
     neighbours = []
 
     full_stops_list = [starting_point] + stops_to_visit + [starting_point]
@@ -154,6 +158,7 @@ def generate_mixed_neighbours(stops_to_visit, starting_point, promising_candidat
     return neighbours
 
 def generate_neighbours_advanced(best_cost, stops_to_visit, starting_point, promising_candidates, sample_size, alpha):
+    # If no best route is knonw (infinite cost), generate whole neighbourhood, neighbourhood sampling otherwise
     if best_cost['time'] == timedelta.max:
         neighbours = generate_neighbours_paths(stops_to_visit, starting_point)
     else:

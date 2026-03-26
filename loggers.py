@@ -42,6 +42,7 @@ def log_time(files_to_suppress=None):
         @wraps(func)
         def wrapper(*args, **kwargs):
 
+            # Log only if fucntion not called from "suppress files"
             caller_file = os.path.basename(inspect.currentframe().f_back.f_code.co_filename)
             should_log = caller_file not in to_suppress
 
